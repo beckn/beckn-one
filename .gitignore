@@ -1,0 +1,11 @@
+/target/
+/.settings/
+.commit
+.idea/
+*.iml
+tmp/
+overrideProperties/
+nohup.out
+database/
+/.gradle/
+.keystore

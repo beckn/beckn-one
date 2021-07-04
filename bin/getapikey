@@ -1,0 +1,26 @@
+#!/bin/bash
+source $HOME/.bash_aliases
+source overrideProperties/config/envvars
+
+toolpath=`dirname $0`
+projpath=$toolpath/../
+cd $projpath
+
+if [ $# -eq 0 ] 
+then 
+    user=root
+    password=root
+else
+    user=$1
+    password=$2
+fi
+if [ "${baseurl}" = "" ]
+then
+    baseurl="http://localhost:${wport}"
+fi
+
+curl -s -H "content-type: application/json" "${baseurl}/login" -d '{ "User" : { "Name":"'$user'" , "Password":"'$password'"} } ' |grep 'ApiKey' |cut -f2 -d ':' |sed -e 's/ //g' -e 's/"//g'
+
+
+
+

@@ -1,0 +1,18 @@
+#!/bin/bash
+toolpath=`dirname $0`
+projpath=$toolpath/../
+cd $projpath
+source overrideProperties/config/envvars
+
+source $HOME/.bash_aliases
+agent_name=$1
+if [ "$2" = "" ] 
+then 
+	action="fire"
+else 
+	action="$2";
+fi 
+apiKey=`bin/getapikey`
+
+curl  http://localhost:${wport}/triggers/${action} 	  -H "ApiKey: $apiKey" -H "Content-Type: application/json" -d '{"Trigger":{"AgentName":"'${agent_name}'"}}' ;
+

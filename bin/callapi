@@ -1,0 +1,32 @@
+#!/bin/bash
+toolpath=`dirname $0`
+projpath=$toolpath/..
+cd $projpath
+
+source $HOME/.bash_aliases
+source overrideProperties/config/envvars
+user_password=$1
+user=`echo ${user_password} |cut -f1 -d '/'`
+password=`echo ${user_password} |cut -f2 -d '/'`
+shift
+api=$1
+shift
+
+if [ "${content_type}" = "" ] 
+then 
+    content_type="application/xml" 
+fi
+
+apiKey=`bin/getapikey $user $password`
+echo "user=$user"
+echo "api=$api"
+echo "data=$data"
+echo "apiKey=$apiKey"
+if [ "${baseurl}" = "" ] 
+then 
+    baseurl="http://localhost:${wport}"
+fi
+
+
+echo curl  -L -v -H "ApiKey: $apiKey" -H "Content-Type: ${content_type}"  ${baseurl}/$api $@
+curl  -L -s -H "ApiKey: $apiKey" -H "Content-Type: ${content_type}"  -H "ApiProtocol: ${ApiProtocol}"  ${baseurl}/$api "$@"

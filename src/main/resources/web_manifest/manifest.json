@@ -1,0 +1,24 @@
+{
+  "name": "portal",
+  "short_name": "portal",
+  "description": "portal",
+  "lang": "en-US",
+  "start_url": "/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/resources/web_manifest/192x192.png",
+      "type" : "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/resources/web_manifest/512x512.png",
+      "type" : "image/png",
+      "sizes": "512x512"
+    }
+  ], 
+   "theme_color": "#000000",
+   "background_color": "#FFFFFF"
+
+}
+

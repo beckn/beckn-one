@@ -1,0 +1,25 @@
+if [ $# -eq 0 ] 
+then 
+    echo "Usage : $0 image.svg" 
+    exit
+fi 
+which convert 2>&1 1>/dev/null 
+
+if [ $? -ne 0 ]
+then 
+    echo "Imagemagik  needed to convert svg to required pngs" 
+fi 
+
+if [ "$?" = "0" ] 
+then
+    if [ "${1%%.svg}" != "$1" ] 
+    then 
+        echo "OK" 
+        convert -resize 192x192 $1 -transparent white 192x192.png
+        convert -resize 294x294 $1 -transparent white 294x294.png
+        convert -resize 512x512 $1 -transparent white 512x512.png
+        convert -resize 64x64 $1 -transparent white favicon.ico
+    else 
+        echo Please pass svg file as argument.
+    fi
+fi

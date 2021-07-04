@@ -1,0 +1,57 @@
+#!/bin/bash 
+source ~/.bash_aliases
+bindir=`dirname $0`
+projpath=$bindir/..
+cd $projpath
+ApiKey=`bin/getapikey`
+
+source overrideProperties/config/envvars
+
+if [ "${swf_env}" = "" ] 
+then 
+  export swf_env="development"
+fi
+
+mvn clean -DskipTests=true package
+if [ "$debug" = "" ] 
+then
+  export debug=y
+fi
+if [ "$suspend" = "" ] 
+then
+  export suspend=n
+fi
+if [ "$debug" = "y"  -o "$debug" = "Y" ] 
+then 
+    export DEBUG_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=${suspend},address=${dport}"
+fi
+
+pid=`ps -ef |grep java.*PORT=${wport}|grep -v grep |tr -s ' ' |cut -f2 -d ' '`
+if [ "$pid" != "" ]
+then 
+kill -9 $pid
+rm -f $PWD/tmp/pid
+sleep 5
+fi
+
+mkdir -p $PWD/tmp
+rm ${PWD}/tmp/pid
+touch ${PWD}/tmp/pid
+
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     separator=":";;
+    Darwin*)    separator=":";;
+    CYGWIN*)    separator=";";;
+    MINGW*)     separator=";";;
+    *)          separator=":"
+esac
+
+if [ "${closeStdFd}" = "" ] 
+then 
+    closeStdFd=true;
+fi
+nohup nice -19 java -ea:com.venky  -Xmx4g -XX:+PrintGCDetails -Xloggc:$PWD/tmp/gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/media/heaps/java.hprof -XX:-OmitStackTraceInFastThrow  $DEBUG_OPTS -DPORT=${wport} -Dswf.env=${swf_env} -Dswf.pidfile=$PWD/tmp/pid -Dderby.locks.waitTimeout=10  -DSystem.out.close=${closeStdFd} -DSystem.err.close=${closeStdFd} -DSystem.in.close=${closeStdFd} -cp "overrideProperties/${separator}target/classes/${separator}target/dependency/*" com.venky.swf.JettyServer &
+
+
+exit 0

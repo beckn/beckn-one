@@ -1,0 +1,7 @@
+source overrideProperties/config/envvars
+source bin/initconnection $1
+if [ -f ~/.inputrc ] 
+then 
+  export INPUTRC=~/.inputrc
+fi
+henplus -J ''"${url}"'' -U''${user}'' -P''${password}''
