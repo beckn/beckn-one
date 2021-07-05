@@ -18,6 +18,7 @@ public interface ApiTest extends Model {
     public String getTestName();
     public void setTestName(String testName);
 
+
     public Long getCalledOnSubscriberId();
     public void setCalledOnSubscriberId(Long id);
     public Subscriber getCalledOnSubscriber();

@@ -6,8 +6,12 @@ import com.venky.swf.controller.annotations.RequireLogin;
 import com.venky.swf.db.Database;
 import com.venky.swf.db.annotations.column.ui.mimes.MimeType;
 import com.venky.swf.db.model.io.json.JSONFormatter;
+import com.venky.swf.db.model.reflection.ModelReflector;
 import com.venky.swf.path.Path;
 import com.venky.swf.plugins.templates.controller.TemplatedController;
+import com.venky.swf.sql.Expression;
+import com.venky.swf.sql.Operator;
+import com.venky.swf.sql.Select;
 import com.venky.swf.views.BytesView;
 import com.venky.swf.views.View;
 import in.succinct.beckn.Acknowledgement;
@@ -20,6 +24,7 @@ import in.succinct.beckn.portal.db.model.api.ApiCall;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 
 public class LocalRetailBapController extends TemplatedController {
@@ -57,9 +62,14 @@ public class LocalRetailBapController extends TemplatedController {
                     messageId = UUID.randomUUID().toString();
                 }
                 JSONFormatter formatter = new JSONFormatter();
-                ApiCall apiCall = Database.getTable(ApiCall.class).newRecord();
-                apiCall.setMessageId(messageId);
-                apiCall = Database.getTable(ApiCall.class).getRefreshed(apiCall);
+                List<ApiCall> apiCalls = new Select(true,true).from(ApiCall.class).where(new Expression(ModelReflector.instance(ApiCall.class).getPool(),"MESSAGE_ID", Operator.EQ,messageId)).execute();
+                ApiCall apiCall =null;
+                if (apiCalls.isEmpty()){
+                    apiCall = Database.getTable(ApiCall.class).newRecord();
+                    apiCall.setMessageId(messageId);
+                }else {
+                    apiCall  = apiCalls.get(0);
+                }
                 apiCall.setCallBackPayload(formatter.toString(request.getInner()));
                 apiCall.setCallBackHeaders(getPath().getHeaders().toString());
                 apiCall.save();

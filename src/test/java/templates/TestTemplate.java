@@ -13,11 +13,16 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Date;
 
 public class TestTemplate {
     @BeforeClass
     public static void setup(){
 
+    }
+    @Test
+    public void testDate(){
+        System.out.println(new Date(0L));
     }
     @Test
     public void testTemplate() throws Exception{

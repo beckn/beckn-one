@@ -18,7 +18,6 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
 import in.succinct.beckn.Context;
-import in.succinct.beckn.Intent;
 import in.succinct.beckn.Message;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.registry.db.model.Subscriber;
@@ -29,9 +28,7 @@ import org.json.simple.JSONValue;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class ApiTestImpl extends ModelImpl<ApiTest> {
@@ -50,6 +47,15 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         ApiTest test = getProxy();
         UseCase useCase = test.getUseCase();
         BecknApi api = useCase.getBecknApi();
+        JSONObject variables = (JSONObject)JSONValue.parse(test.getVariables());
+        for (Object key : variables.keySet()){
+            if (key.toString().startsWith("context.")){
+                String contextKey = key.toString().replace("context.","");
+                Object value = variables.get(key);
+                context.set(contextKey,String.valueOf(value));
+            }
+        }
+
 
         Subscriber calledOn = test.getCalledOnSubscriber();
         Subscriber caller = test.getProxySubscriber();
@@ -59,15 +65,18 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
 
 
-        Map<String,String> headers  = new HashMap<>();
+        JSONObject headers  = new JSONObject();
         assert caller != null;
         headers.put("Authorization", request.generateAuthorizationHeader(caller.getSubscriberId(),
                 String.format("%s.k1", caller.getSubscriberId())));
         headers.put("Accept", MimeType.APPLICATION_JSON.toString());
         headers.put("Content-Type",MimeType.APPLICATION_JSON.toString());
 
+        JSONObject responseHeaders = new JSONObject();
 
-        Call<JSONObject> call = new Call<JSONObject>().method(HttpMethod.POST).url(calledOn.getSubscriberUrl() +"/" + api.getName()).
+        Call<JSONObject> call = new Call<>();
+        call.method(HttpMethod.POST).
+                url(calledOn.getSubscriberUrl() +"/" + api.getName()).
                 input(request.getInner()).inputFormat(InputFormat.JSON).headers(headers);
         JSONAware response = call.getResponseAsJson();
 
@@ -75,8 +84,9 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         ApiCall apiCall = Database.getTable(ApiCall.class).newRecord();
         apiCall.setApiTestId(test.getId());
         apiCall.setRequestHeaders(headers.toString());
-        apiCall.setRequestPayLoad(formatter.toString(request.getInner()));
-        apiCall.setResponseHeaders(call.getResponseHeaders().toString());
+        apiCall.setRequestPayLoad(request.getInner().toString());
+        responseHeaders.putAll(call.getResponseHeaders());
+        apiCall.setResponseHeaders(responseHeaders.toString());
         apiCall.setResponsePayload(formatter.toString(response));
         apiCall.setMessageId(context.getMessageId());
         apiCall.save();
@@ -166,6 +176,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
         String messageId = UUID.randomUUID().toString(); //SequentialNumber.get("BECKN_MESSAGE_ID").next();
         context.setMessageId(messageId);
+        context.setTransactionId(messageId);
         /*
         String transactionId  = SequentialNumber.get("BECKN_TRANSACTION_ID").next();
         context.setTransactionId(transactionId);

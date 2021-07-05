@@ -13,6 +13,7 @@ public interface ApiCall extends Model {
     public String getMessageId();
     public void setMessageId(String messageId);
 
+
     @COLUMN_SIZE(2048)
     public String getRequestPayLoad();
     public void setRequestPayLoad(String payLoad);
@@ -41,5 +42,5 @@ public interface ApiCall extends Model {
     public void setCallBackHeaders(String headers);
 
 
-
+    public void execute();
 }
