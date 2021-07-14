@@ -6,6 +6,7 @@ import freemarker.core.ArithmeticEngine;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
+import in.succinct.beckn.Time;
 import org.json.simple.JSONObject;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -22,7 +23,9 @@ public class TestTemplate {
     }
     @Test
     public void testDate(){
-        System.out.println(new Date(0L));
+        Time time = new Time();
+        time.setTimestamp(new Date());
+        System.out.println(time.getInner());
     }
     @Test
     public void testTemplate() throws Exception{

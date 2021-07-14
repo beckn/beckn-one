@@ -117,3 +117,4 @@ function subscribeUser(swRegistration, updateSubscriptionOnServer) {
     });
 }
 
+sw_start();

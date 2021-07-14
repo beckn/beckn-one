@@ -1,7 +1,9 @@
 package in.succinct.beckn.portal.extensions;
 
+import com.venky.core.util.Bucket;
 import com.venky.swf.db.extensions.BeforeModelSaveExtension;
 import in.succinct.beckn.portal.db.model.collab.MyPost;
+import in.succinct.beckn.portal.db.model.collab.Post;
 
 public class BeforeSaveMyPost extends BeforeModelSaveExtension<MyPost> {
     static {
@@ -9,24 +11,32 @@ public class BeforeSaveMyPost extends BeforeModelSaveExtension<MyPost> {
     }
     @Override
     public void beforeSave(MyPost model) {
-        if (model.getRawRecord().isFieldDirty("UN_READ")){
+        Post post = model.getPost();
+        Bucket readCount = model.getPost().getReadCount();
+        if (readCount == null){
+            readCount = new Bucket();
+            post.setReadCount(readCount);
+        }
+        Bucket usefulCount = model.getPost().getUsefulCount();
+        if (usefulCount == null){
+            usefulCount = new Bucket();
+            post.setUsefulCount(usefulCount);
+        }
+        if (!model.getRawRecord().isNewRecord() && model.getRawRecord().isFieldDirty("UN_READ")){
             if (model.isUnRead() ){
-                if (!model.getRawRecord().isNewRecord()) {
-                    model.getPost().getReadCount().decrement();
-                }
+                readCount.decrement();
             }else {
-                model.getPost().getReadCount().increment();
+                readCount.increment();
             }
         }
-        if (model.getRawRecord().isFieldDirty("USEFUL")){
+        if (!model.getRawRecord().isNewRecord() && model.getRawRecord().isFieldDirty("USEFUL")){
             if (model.isUseful()){
-                model.getPost().getUsefulCount().increment();
+                usefulCount.increment();
             }else {
-                if (!model.getRawRecord().isNewRecord()) {
-                    model.getPost().getUsefulCount().decrement();
-                }
+                usefulCount.decrement();
             }
         }
+        post.save();
 
     }
 }

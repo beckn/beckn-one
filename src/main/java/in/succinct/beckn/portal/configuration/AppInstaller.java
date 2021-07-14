@@ -19,7 +19,7 @@ public class AppInstaller implements Installer {
     @Override
     public void install() {
         for (String type : new String[]{"bpp", "bap"}) {
-            for (String domain : new String[]{"local-retail"}) {
+            for (String domain : new String[]{"nic2004:52110"}) {
                 generateBecknKeys(domain, type);
             }
         }

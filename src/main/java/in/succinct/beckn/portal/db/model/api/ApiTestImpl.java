@@ -12,6 +12,10 @@ import com.venky.swf.integration.api.InputFormat;
 import com.venky.swf.plugins.templates.util.templates.TemplateEngine;
 import com.venky.swf.plugins.templates.util.templates.ToWords;
 import com.venky.swf.routing.Config;
+import com.venky.swf.sql.Conjunction;
+import com.venky.swf.sql.Expression;
+import com.venky.swf.sql.Operator;
+import com.venky.swf.sql.Select;
 import freemarker.cache.NullCacheStorage;
 import freemarker.core.ArithmeticEngine;
 import freemarker.template.Configuration;
@@ -25,6 +29,7 @@ import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.util.Date;
@@ -47,14 +52,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         ApiTest test = getProxy();
         UseCase useCase = test.getUseCase();
         BecknApi api = useCase.getBecknApi();
-        JSONObject variables = (JSONObject)JSONValue.parse(test.getVariables());
-        for (Object key : variables.keySet()){
-            if (key.toString().startsWith("context.")){
-                String contextKey = key.toString().replace("context.","");
-                Object value = variables.get(key);
-                context.set(contextKey,String.valueOf(value));
-            }
-        }
+
 
 
         Subscriber calledOn = test.getCalledOnSubscriber();
@@ -67,8 +65,10 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
         JSONObject headers  = new JSONObject();
         assert caller != null;
-        headers.put("Authorization", request.generateAuthorizationHeader(caller.getSubscriberId(),
-                String.format("%s.k1", caller.getSubscriberId())));
+        if (Config.instance().getBooleanProperty("beckn.auth.enabled", false)) {
+            headers.put("Authorization", request.generateAuthorizationHeader(caller.getSubscriberId(),
+                    String.format("%s.k1", caller.getSubscriberId())));
+        }
         headers.put("Accept", MimeType.APPLICATION_JSON.toString());
         headers.put("Content-Type",MimeType.APPLICATION_JSON.toString());
 
@@ -79,15 +79,20 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
                 url(calledOn.getSubscriberUrl() +"/" + api.getName()).
                 input(request.getInner()).inputFormat(InputFormat.JSON).headers(headers);
         JSONAware response = call.getResponseAsJson();
+        if (response == null ){
+            response = (JSONAware) JSONValue.parse(new InputStreamReader(call.getErrorStream()));
+        }
 
         JSONFormatter formatter = new JSONFormatter();
         ApiCall apiCall = Database.getTable(ApiCall.class).newRecord();
         apiCall.setApiTestId(test.getId());
         apiCall.setRequestHeaders(headers.toString());
         apiCall.setRequestPayLoad(request.getInner().toString());
-        responseHeaders.putAll(call.getResponseHeaders());
-        apiCall.setResponseHeaders(responseHeaders.toString());
-        apiCall.setResponsePayload(formatter.toString(response));
+        if (response != null){
+            responseHeaders.putAll(call.getResponseHeaders());
+            apiCall.setResponseHeaders(responseHeaders.toString());
+            apiCall.setResponsePayload(formatter.toString(response));
+        }
         apiCall.setMessageId(context.getMessageId());
         apiCall.save();
 
@@ -139,44 +144,75 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
         Context context = new Context();
         context.setAction(api.getName());
+        context.setDomain(useCase.getDomain());
 
         Subscriber bap = null;
         Subscriber bpp = null ;
-        if (ObjectUtil.equals(test.getCalledOnSubscriber().getType(), Subscriber.SUBSCRIBER_TYPE_BPP)){
+        Subscriber bg = null ;
+        JSONObject variables = (JSONObject)JSONValue.parse(test.getVariables());
+
+        for (Object key : variables.keySet()){
+            if (key.toString().startsWith("context.")){
+                String contextKey = key.toString().replace("context.","");
+                Object value = variables.get(key);
+                context.set(contextKey,String.valueOf(value));
+            }
+        }
+        String apiUsuallycalledOn = "";
+        if (ObjectUtil.equals(api.getPlatform(),Subscriber.SUBSCRIBER_TYPE_BPP)){
             bpp = test.getCalledOnSubscriber();
-            if (test.getProxySubscriberId() != null){
-                bap = test.getProxySubscriber();
-            }else {
+            apiUsuallycalledOn = Subscriber.SUBSCRIBER_TYPE_BPP;
+        }else if (ObjectUtil.equals(api.getPlatform(),Subscriber.SUBSCRIBER_TYPE_BAP)){
+            bap = test.getCalledOnSubscriber();
+            apiUsuallycalledOn = Subscriber.SUBSCRIBER_TYPE_BAP;
+
+        }else if (ObjectUtil.equals(api.getPlatform(),Subscriber.SUBSCRIBER_TYPE_BG)){
+            bg = test.getCalledOnSubscriber();
+            List<BecknApi> apis  = new Select().from(BecknApi.class).where(new Expression(getPool(), Conjunction.AND).add(
+                    new Expression(getPool(),"PLATFORM" , Operator.NE, Subscriber.SUBSCRIBER_TYPE_BG)).add(
+                            new Expression(getPool(),"NAME",Operator.EQ,api.getName()) ) ).execute();
+            apiUsuallycalledOn = apis.get(0).getPlatform();
+        }
+        if (test.getProxySubscriberId() != null){
+            Subscriber s = test.getProxySubscriber();
+            if (bap == null && ObjectUtil.equals(s.getType(), Subscriber.SUBSCRIBER_TYPE_BAP)){
+                bap = s;
+            }
+            if (bpp == null && ObjectUtil.equals(s.getType(),Subscriber.SUBSCRIBER_TYPE_BPP)){
+                bpp = s;
+            }
+        }else {
+            if (bap == null){
                 bap = getSelfSubscription(useCase.getDomain(),Subscriber.SUBSCRIBER_TYPE_BAP);
             }
-        }else if (ObjectUtil.equals(test.getCalledOnSubscriber().getType(),Subscriber.SUBSCRIBER_TYPE_BAP)){
-            bap = test.getCalledOnSubscriber();
-            if (test.getProxySubscriberId() != null){
-                bpp = test.getProxySubscriber();
-            }else {
+            if (bpp == null){
                 bpp = getSelfSubscription(useCase.getDomain(),Subscriber.SUBSCRIBER_TYPE_BPP);
             }
         }
-        if (bap != null && !ObjectUtil.equals(bap.getType(),Subscriber.SUBSCRIBER_TYPE_BAP)){
-            bap = null;
+
+
+        if (bap != null && context.getBapId() == null) {
+            context.setBapId(bap.getSubscriberId());
+            context.setBapUri(bap.getSubscriberUrl());
         }
-        if (bpp != null && !ObjectUtil.equals(bpp.getType(),Subscriber.SUBSCRIBER_TYPE_BPP)){
-            bap = null;
+        if (bpp != null && context.getBppId() == null && bg == null) {
+            context.setBppId(bpp.getSubscriberId());
+            context.setBppUri(bpp.getSubscriberUrl());
         }
-        if (bap == null || bpp == null){
-            throw  new RuntimeException("Cannot Determine the participants interacting in this api call");
+        if (ObjectUtil.isVoid(context.getBppId()) && bg == null){
+            throw new RuntimeException("Cannot determine participants in the interaction");
+        }else if (ObjectUtil.isVoid(context.getBapId()) && bg == null ){
+            throw new RuntimeException("Cannot determine participants in the interaction");
         }
-        context.setBapId(bap.getSubscriberId());
-        context.setBapUri(bap.getSubscriberUrl());
-        context.setBppId(bpp.getSubscriberId());
-        context.setBppUri(bpp.getSubscriberUrl());
         context.setTimestamp(new Date());
         context.setTtl(60);
-        context.setCoreVersion("0.9.1-draft03");
+        context.setCoreVersion("0.9.1");
 
         String messageId = UUID.randomUUID().toString(); //SequentialNumber.get("BECKN_MESSAGE_ID").next();
         context.setMessageId(messageId);
-        context.setTransactionId(messageId);
+        if (ObjectUtil.isVoid(context.getTransactionId())) {
+            context.setTransactionId(messageId);
+        }
         /*
         String transactionId  = SequentialNumber.get("BECKN_TRANSACTION_ID").next();
         context.setTransactionId(transactionId);

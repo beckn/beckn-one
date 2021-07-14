@@ -1,6 +1,7 @@
 package in.succinct.beckn.portal.db.model.api;
 
 import com.venky.swf.db.annotations.column.UNIQUE_KEY;
+import com.venky.swf.db.annotations.column.pm.PARTICIPANT;
 import com.venky.swf.db.annotations.column.ui.WATERMARK;
 import com.venky.swf.db.model.Model;
 import in.succinct.beckn.registry.db.model.Subscriber;
@@ -9,6 +10,10 @@ import java.io.Reader;
 import java.util.List;
 
 public interface ApiTest extends Model {
+
+    @PARTICIPANT
+    public Long getCreatorUserId();
+    
     @UNIQUE_KEY
     public Long getUseCaseId();
     public void setUseCaseId(Long id);

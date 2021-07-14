@@ -2,9 +2,14 @@ package in.succinct.beckn.portal.db.model.api;
 
 import com.venky.swf.db.annotations.column.COLUMN_SIZE;
 import com.venky.swf.db.annotations.column.UNIQUE_KEY;
+import com.venky.swf.db.annotations.column.pm.PARTICIPANT;
 import com.venky.swf.db.model.Model;
 
 public interface ApiCall extends Model {
+    @PARTICIPANT
+    public Long getCreatorUserId();
+
+
     public Long getApiTestId();
     public void setApiTestId(Long id);
     public ApiTest getApiTest();
@@ -32,7 +37,7 @@ public interface ApiCall extends Model {
     public void setResponseHeaders(String headers);
 
 
-    @COLUMN_SIZE(4096)
+    @COLUMN_SIZE(4 * 4096)
     public String getCallBackPayload();
     public void setCallBackPayload(String payLoad);
 

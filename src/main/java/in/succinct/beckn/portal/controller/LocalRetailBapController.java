@@ -9,6 +9,7 @@ import com.venky.swf.db.model.io.json.JSONFormatter;
 import com.venky.swf.db.model.reflection.ModelReflector;
 import com.venky.swf.path.Path;
 import com.venky.swf.plugins.templates.controller.TemplatedController;
+import com.venky.swf.routing.Config;
 import com.venky.swf.sql.Expression;
 import com.venky.swf.sql.Operator;
 import com.venky.swf.sql.Select;
@@ -20,6 +21,8 @@ import in.succinct.beckn.Error;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.Response;
 import in.succinct.beckn.portal.db.model.api.ApiCall;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -47,7 +50,7 @@ public class LocalRetailBapController extends TemplatedController {
     }
     public View ack(Request request){
         Acknowledgement ack = new Acknowledgement(Status.ACK);
-        ack.setSignature(Request.generateSignature(request.hash(),request.getPrivateKey(request.getContext().getBapId(),request.getContext().getBapId() +".k1")));
+        //ack.setSignature(Request.generateSignature(request.hash(),request.getPrivateKey(request.getContext().getBapId(),request.getContext().getBapId() +".k1")));
         return new BytesView(getPath(),new Response(request.getContext(),ack).toString().getBytes(StandardCharsets.UTF_8));
     }
 
@@ -56,7 +59,7 @@ public class LocalRetailBapController extends TemplatedController {
         Request request =null ;
         try {
             request = new Request(StringUtil.read(getPath().getInputStream()));
-            if (request.verifySignature("Authorization",getPath().getHeaders())){
+            if (!Config.instance().getBooleanProperty("beckn.auth.enabled", false)  || request.verifySignature("Authorization",getPath().getHeaders())){
                 String messageId = request.getContext().getMessageId();
                 if (ObjectUtil.isVoid(messageId)){
                     messageId = UUID.randomUUID().toString();
@@ -70,8 +73,22 @@ public class LocalRetailBapController extends TemplatedController {
                 }else {
                     apiCall  = apiCalls.get(0);
                 }
-                apiCall.setCallBackPayload(formatter.toString(request.getInner()));
-                apiCall.setCallBackHeaders(getPath().getHeaders().toString());
+
+                JSONObject responseCollection = new JSONObject();
+                JSONObject headersCollection = new JSONObject();
+
+                if (!apiCall.getReflector().isVoid(apiCall.getCallBackPayload())){
+                    responseCollection = (JSONObject) JSONValue.parse(apiCall.getCallBackPayload());
+                    headersCollection = (JSONObject) JSONValue.parse(apiCall.getCallBackHeaders());
+                }
+
+                responseCollection.put(request.getContext().getBppId(),request.getInner());
+                JSONObject header = new JSONObject();
+                header.putAll(getPath().getHeaders());
+                headersCollection.put(request.getContext().getBppId(),header);
+
+                apiCall.setCallBackPayload(formatter.toString(responseCollection));
+                apiCall.setCallBackHeaders(formatter.toString(headersCollection));
                 apiCall.save();
                 return ack(request);
             }else {

@@ -53,7 +53,7 @@ public class LocalRetailBppController extends TemplatedController {
     }
     public View ack(Request request){
         Acknowledgement ack = new Acknowledgement(Status.ACK);
-        ack.setSignature(Request.generateSignature(request.hash(),request.getPrivateKey(request.getContext().getBppId(),request.getContext().getBppId() +".k1")));
+        //ack.setSignature(Request.generateSignature(request.hash(),request.getPrivateKey(request.getContext().getBppId(),request.getContext().getBppId() +".k1")));
         return new BytesView(getPath(),new Response(request.getContext(),ack).toString().getBytes(StandardCharsets.UTF_8));
     }
 
@@ -62,7 +62,7 @@ public class LocalRetailBppController extends TemplatedController {
         Request request = null;
         try {
             request = new Request(StringUtil.read(getPath().getInputStream()));
-            if (request.verifySignature("Authorization",getPath().getHeaders())){
+            if (!Config.instance().getBooleanProperty("beckn.auth.enabled", false)  || request.verifySignature("Authorization",getPath().getHeaders())){
                 return ack(request);
             }else {
                 return nack(request,request.getContext().getBapId());
