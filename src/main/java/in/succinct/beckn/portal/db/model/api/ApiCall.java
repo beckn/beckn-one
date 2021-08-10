@@ -28,7 +28,7 @@ public interface ApiCall extends Model {
     public void setRequestHeaders(String headers);
 
 
-    @COLUMN_SIZE(2048)
+    @COLUMN_SIZE(2 * 4096)
     public String getResponsePayload();
     public void setResponsePayload(String payload);
 

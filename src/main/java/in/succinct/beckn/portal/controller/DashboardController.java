@@ -1,11 +1,13 @@
 package in.succinct.beckn.portal.controller;
 
+import com.venky.swf.controller.Controller;
 import com.venky.swf.controller.annotations.RequireLogin;
 import com.venky.swf.path.Path;
-import com.venky.swf.plugins.templates.controller.TemplatedController;
+import com.venky.swf.controller.TemplatedController;
+import com.venky.swf.plugins.templates.util.templates.TemplateEngine;
 import com.venky.swf.views.View;
 
-public class DashboardController extends TemplatedController {
+public class DashboardController extends Controller {
     public DashboardController(Path path) {
         super(path);
     }
@@ -17,6 +19,10 @@ public class DashboardController extends TemplatedController {
 
     @RequireLogin
     public View index(){
-        return html("index",true);
+        if (TemplateEngine.getInstance(getTemplateDirectory()).exists("/html/index.html")){
+            return html("index");
+        }else {
+            return super.dashboard();
+        }
     }
 }

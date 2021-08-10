@@ -2,13 +2,14 @@ package in.succinct.beckn.portal.controller;
 
 import com.venky.core.string.StringUtil;
 import com.venky.core.util.ObjectUtil;
+import com.venky.swf.controller.Controller;
 import com.venky.swf.controller.annotations.RequireLogin;
 import com.venky.swf.db.Database;
 import com.venky.swf.db.annotations.column.ui.mimes.MimeType;
 import com.venky.swf.db.model.io.json.JSONFormatter;
 import com.venky.swf.db.model.reflection.ModelReflector;
 import com.venky.swf.path.Path;
-import com.venky.swf.plugins.templates.controller.TemplatedController;
+import com.venky.swf.controller.TemplatedController;
 import com.venky.swf.routing.Config;
 import com.venky.swf.sql.Expression;
 import com.venky.swf.sql.Operator;
@@ -30,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
-public class LocalRetailBapController extends TemplatedController {
+public class LocalRetailBapController extends Controller {
     public LocalRetailBapController(Path path) {
         super(path);
     }

@@ -1,32 +1,59 @@
 package in.succinct.beckn.portal.configuration;
 
 import com.venky.core.security.Crypt;
-import com.venky.core.util.ObjectUtil;
 import com.venky.swf.configuration.Installer;
 import com.venky.swf.db.Database;
 import com.venky.swf.plugins.collab.db.model.CryptoKey;
 import com.venky.swf.plugins.collab.db.model.config.Country;
 import com.venky.swf.routing.Config;
+import com.venky.swf.sql.Conjunction;
+import com.venky.swf.sql.Expression;
+import com.venky.swf.sql.Operator;
+import com.venky.swf.sql.Select;
+import in.succinct.beckn.portal.util.DomainMapper;
 import in.succinct.beckn.registry.db.model.Subscriber;
+import in.succinct.beckn.registry.db.model.SubscriberLocation;
 
 import java.security.KeyPair;
 import java.sql.Timestamp;
-
-import static com.venky.swf.plugins.collab.db.model.config.City.findByCountryAndStateAndName;
+import java.util.List;
 
 public class AppInstaller implements Installer {
 
     @Override
     public void install() {
-        for (String type : new String[]{"bpp", "bap"}) {
+        for (String type : new String[]{"bpp", "bap", "bg"}) {
             for (String domain : new String[]{"nic2004:52110"}) {
                 generateBecknKeys(domain, type);
             }
         }
+        updateProviderLocationsMinMaxLatLng();
     }
 
+    private void updateProviderLocationsMinMaxLatLng() {
+        Select select = new Select().from(SubscriberLocation.class);
+        Expression where = new Expression(select.getPool(), Conjunction.AND);
+        where.add(new Expression(select.getPool(),"RADIUS" , Operator.GT , 0));
+        where.add(new Expression(select.getPool(),"LAT" , Operator.NE ));
+        where.add(new Expression(select.getPool(),"LNG" , Operator.NE ));
+        Expression minMax = new Expression(select.getPool(),Conjunction.OR);
+        where.add(minMax);
+        minMax.add(new Expression(select.getPool(),"MIN_LAT" , Operator.EQ ));
+        minMax.add(new Expression(select.getPool(),"MIN_LNG" , Operator.EQ ));
+        minMax.add(new Expression(select.getPool(),"MAX_LAT" , Operator.EQ ));
+        minMax.add(new Expression(select.getPool(),"MAX_LNG" , Operator.EQ ));
+
+        List<SubscriberLocation> facilities = select.where(where).execute();
+        for (SubscriberLocation f :facilities){
+            f.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+            f.save(); //Let before save do the trick.
+        }
+
+    }
+
+
     public void generateBecknKeys(String domain, String type) {
-        String subscriberId =  Config.instance().getHostName() + "." + domain + "." + type;
+        String subscriberId =  Config.instance().getHostName() + "." + DomainMapper.getMapping(domain) + "." + type;
 
         CryptoKey key = Database.getTable(CryptoKey.class).newRecord();
         key.setAlias(subscriberId + ".k1");
@@ -54,7 +81,7 @@ public class AppInstaller implements Installer {
         subscriber = Database.getTable(Subscriber.class).getRefreshed(subscriber);
         if (subscriber.getRawRecord().isNewRecord()) {
             subscriber.setStatus("SUBSCRIBED");
-            subscriber.setSubscriberUrl(Config.instance().getServerBaseUrl() + "/"+ domain.replace('-', '_') + "_"  +type );
+            subscriber.setSubscriberUrl(Config.instance().getServerBaseUrl() + "/"+ DomainMapper.getMapping(domain).replace('-', '_') + "_"  +type );
             subscriber.setDomain(domain);
 
             subscriber.setCountryId(Country.findByName("India").getId());

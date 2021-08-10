@@ -21,6 +21,9 @@ public class InboxPost implements Task {
     @Override
     public void execute() {
         Post post = Database.getTable(Post.class).get(postId);
+        if (post.getCommunityId() == null){
+            return;
+        }
         List<Task> taskList = new ArrayList<>();
         for (Member member : post.getCommunity().getMembers()) {
             taskList.add(new UserInboxPost(post.getId(),member.getUserId()));

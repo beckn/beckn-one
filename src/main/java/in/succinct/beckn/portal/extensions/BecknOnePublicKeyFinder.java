@@ -22,6 +22,7 @@ public class BecknOnePublicKeyFinder implements Extension {
 
         Subscriber criteria = Database.getTable(Subscriber.class).newRecord();
         criteria.setSubscriberId(subscriber_id);
+        criteria.setStatus(Subscriber.SUBSCRIBER_STATUS_SUBSCRIBED);
 
         List<Subscriber> subscriberList = Subscriber.lookup(criteria,1);
         Optional<Subscriber> subscriber = subscriberList.stream().filter(s-> ObjectUtil.equals(s.getStatus(),Subscriber.SUBSCRIBER_STATUS_SUBSCRIBED)).findAny();

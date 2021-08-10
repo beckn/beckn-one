@@ -16,6 +16,8 @@ public interface Post extends Model {
     public void setCommunityId(Long id);
     public Community getCommunity();
 
+
+
     public  String getTitle();
     public void setTitle(String title);
 
@@ -25,6 +27,7 @@ public interface Post extends Model {
     public Long getAuthorId();
     public void setAuthorId(Long id);
     public User getAuthor();
+
 
     /**
      * Is Markdown body
@@ -38,5 +41,7 @@ public interface Post extends Model {
 
     Bucket getUsefulCount();
     public void setUsefulCount(Bucket readCount);
+
+
 
 }

@@ -2,6 +2,7 @@ package in.succinct.beckn.portal.db.model;
 
 import com.venky.swf.db.annotations.column.relationship.CONNECTED_VIA;
 import in.succinct.beckn.portal.db.model.collab.Member;
+import in.succinct.beckn.portal.db.model.proposal.SubscribedTag;
 
 import java.util.List;
 
@@ -11,4 +12,7 @@ import java.util.List;
 public interface User extends com.venky.swf.plugins.collab.db.model.user.User {
     @CONNECTED_VIA("USER_ID")
     public List<Member> getMembers();
+
+    @CONNECTED_VIA("USER_ID")
+    public List<SubscribedTag> getSubscribedTags();
 }

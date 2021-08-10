@@ -1,14 +1,15 @@
 package in.succinct.beckn.portal.controller;
 
+import com.venky.swf.controller.ModelController;
 import com.venky.swf.controller.annotations.SingleRecordAction;
 import com.venky.swf.db.Database;
 import com.venky.swf.path.Path;
-import com.venky.swf.plugins.templates.controller.TemplatedModelController;
+import com.venky.swf.controller.TemplatedModelController;
 import com.venky.swf.views.RedirectorView;
 import com.venky.swf.views.View;
 import in.succinct.beckn.portal.db.model.collab.Community;
 
-public class CommunitiesController extends TemplatedModelController<Community> {
+public class CommunitiesController extends ModelController<Community> {
     public CommunitiesController(Path path) {
         super(path);
     }

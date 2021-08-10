@@ -10,12 +10,12 @@ import com.venky.swf.integration.api.Call;
 import com.venky.swf.integration.api.HttpMethod;
 import com.venky.swf.integration.api.InputFormat;
 import com.venky.swf.plugins.templates.util.templates.TemplateEngine;
-import com.venky.swf.plugins.templates.util.templates.ToWords;
 import com.venky.swf.routing.Config;
 import com.venky.swf.sql.Conjunction;
 import com.venky.swf.sql.Expression;
 import com.venky.swf.sql.Operator;
 import com.venky.swf.sql.Select;
+import com.venky.swf.util.ToWords;
 import freemarker.cache.NullCacheStorage;
 import freemarker.core.ArithmeticEngine;
 import freemarker.template.Configuration;
@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings("unchecked")
 public class ApiTestImpl extends ModelImpl<ApiTest> {
     public ApiTestImpl(ApiTest test){
         super(test);
@@ -114,11 +115,10 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
            throw new RuntimeException(ex);
         }
 
-        Message message = new Message(messagePayload);
-        return message;
+        return new Message(messagePayload);
     }
 
-    private static Configuration cfg = null ;
+    private static final Configuration cfg = null ;
     static {
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_28);
         cfg.setDefaultEncoding("UTF-8");
@@ -229,6 +229,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         criteria.setSubscriberId(Config.instance().getHostName() + "." + domain +"."+ type);
         criteria.setDomain(domain);
         criteria.setType(type);
+        criteria.setStatus(Subscriber.SUBSCRIBER_STATUS_SUBSCRIBED);
 
         List<Subscriber> subscribers = Subscriber.lookup(criteria,10);
         if (!subscribers.isEmpty()){

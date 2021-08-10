@@ -1,10 +1,11 @@
 package in.succinct.beckn.portal.controller;
 
+import com.venky.swf.controller.Controller;
 import com.venky.swf.path.Path;
-import com.venky.swf.plugins.templates.controller.TemplatedController;
+import com.venky.swf.controller.TemplatedController;
 import com.venky.swf.views.View;
 
-public class GlobalController extends TemplatedController {
+public class GlobalController extends Controller {
     public GlobalController(Path path) {
         super(path);
     }

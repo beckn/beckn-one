@@ -1,6 +1,6 @@
 package templates;
 
-import com.venky.swf.plugins.templates.util.templates.ToWords;
+import com.venky.swf.util.ToWords;
 import freemarker.cache.NullCacheStorage;
 import freemarker.core.ArithmeticEngine;
 import freemarker.template.Configuration;

@@ -1,13 +1,11 @@
 package in.succinct.beckn.portal.db.model.collab;
 
-import com.venky.core.util.ObjectUtil;
 import com.venky.swf.db.Database;
 import com.venky.swf.db.table.ModelImpl;
 import com.venky.swf.sql.Conjunction;
 import com.venky.swf.sql.Expression;
 import com.venky.swf.sql.Operator;
 import com.venky.swf.sql.Select;
-import in.succinct.beckn.portal.db.model.User;
 
 import java.util.List;
 
@@ -19,6 +17,10 @@ public class CommunityImpl extends ModelImpl<Community> {
         super(community);
     }
     public void join(){
+        if (!getProxy().isSelfManaged()){
+            throw new RuntimeException("Please contact admin for this group");
+        }
+
         Member member = getMember(Database.getInstance().getCurrentUser());
         if (member != null) {
             member.setActive(true);
@@ -85,14 +87,16 @@ public class CommunityImpl extends ModelImpl<Community> {
     }
 
     public boolean isMember() {
+        return isMember(Database.getInstance().getCurrentUser());
+    }
+    public boolean isMember(com.venky.swf.db.model.User user) {
         Community community = getProxy();
         if (community.getRawRecord().isNewRecord()){
             return false;
         }
-        Member member = getMember(Database.getInstance().getCurrentUser());
+        Member member = getMember(user);
         return member!=null && !member.getRawRecord().isNewRecord() && member.isActive();
     }
-
     public boolean isAdmin(){
         Community community = getProxy();
         if (community.getRawRecord().isNewRecord()){
