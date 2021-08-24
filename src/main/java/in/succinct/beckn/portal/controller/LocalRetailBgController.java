@@ -7,6 +7,7 @@ import com.venky.swf.controller.Controller;
 import com.venky.swf.controller.annotations.RequireLogin;
 import com.venky.swf.db.Database;
 import com.venky.swf.db.annotations.column.ui.mimes.MimeType;
+import com.venky.swf.db.model.Model;
 import com.venky.swf.integration.api.Call;
 import com.venky.swf.integration.api.HttpMethod;
 import com.venky.swf.integration.api.InputFormat;
@@ -38,6 +39,7 @@ import in.succinct.beckn.portal.util.DomainMapper;
 import in.succinct.beckn.registry.db.model.City;
 import in.succinct.beckn.registry.db.model.Country;
 import in.succinct.beckn.registry.db.model.Subscriber;
+import in.succinct.beckn.registry.db.model.Subscriber.SubscriberWithLocations;
 import in.succinct.beckn.registry.db.model.SubscriberLocation;
 
 import javax.servlet.http.HttpServletResponse;
@@ -49,9 +51,12 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class LocalRetailBgController extends Controller {
     public LocalRetailBgController(Path path) {
@@ -87,7 +92,6 @@ public class LocalRetailBgController extends Controller {
                     Subscriber criteria = getCriteria(request);
                     criteria.setType(Subscriber.SUBSCRIBER_TYPE_BPP);
 
-
                     List<Subscriber> subscriberList ;
                     Circle deliveryRegion = getDeliveryRegion(request);
 
@@ -113,7 +117,8 @@ public class LocalRetailBgController extends Controller {
                             where.add(bb.getWhereClause(SubscriberLocation.class));
                         }
                         List<SubscriberLocation> locations = select.where(where).groupBy("SUBSCRIBER_ID").execute();
-                        subscriberList = new ArrayList<>();
+                        subscriberList = Subscriber.lookup(criteria,0,null, SubscriberWithLocations.NO);
+
                         for (Iterator<SubscriberLocation> i = locations.iterator() ; i.hasNext() ;) {
                             SubscriberLocation subscriberLocation = i.next();
                             subscriberList.add(subscriberLocation.getSubscriber());
