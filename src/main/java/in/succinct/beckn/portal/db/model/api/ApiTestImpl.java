@@ -229,7 +229,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         String domain = DomainMapper.getMapping(realDomain);
         Subscriber criteria = Database.getTable(Subscriber.class).newRecord();
         criteria.setSubscriberId(Config.instance().getHostName() + "." + domain +"."+ type);
-        criteria.setDomain(domain);
+        criteria.setDomain(realDomain);
         criteria.setType(type);
         criteria.setStatus(Subscriber.SUBSCRIBER_STATUS_SUBSCRIBED);
 
