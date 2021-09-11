@@ -24,6 +24,7 @@ import freemarker.template.TemplateExceptionHandler;
 import in.succinct.beckn.Context;
 import in.succinct.beckn.Message;
 import in.succinct.beckn.Request;
+import in.succinct.beckn.portal.util.DomainMapper;
 import in.succinct.beckn.registry.db.model.Subscriber;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
@@ -224,7 +225,8 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
 
 
-    private Subscriber getSelfSubscription(String domain, String type) {
+    private Subscriber getSelfSubscription(String realDomain, String type) {
+        String domain = DomainMapper.getMapping(realDomain);
         Subscriber criteria = Database.getTable(Subscriber.class).newRecord();
         criteria.setSubscriberId(Config.instance().getHostName() + "." + domain +"."+ type);
         criteria.setDomain(domain);

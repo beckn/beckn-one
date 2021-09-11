@@ -10,6 +10,7 @@ import com.venky.swf.sql.Conjunction;
 import com.venky.swf.sql.Expression;
 import com.venky.swf.sql.Operator;
 import com.venky.swf.sql.Select;
+import in.succinct.beckn.Request;
 import in.succinct.beckn.portal.util.DomainMapper;
 import in.succinct.beckn.registry.db.model.Subscriber;
 import in.succinct.beckn.registry.db.model.SubscriberLocation;
@@ -59,7 +60,7 @@ public class AppInstaller implements Installer {
         key.setAlias(subscriberId + ".k1");
         key = Database.getTable(CryptoKey.class).getRefreshed(key);
         if (key.getRawRecord().isNewRecord()) {
-            KeyPair pair = Crypt.getInstance().generateKeyPair("Ed25519", 256);
+            KeyPair pair = Crypt.getInstance().generateKeyPair(Request.SIGNATURE_ALGO, Request.SIGNATURE_ALGO_KEY_LENGTH);
             key.setPrivateKey(Crypt.getInstance().getBase64Encoded(pair.getPrivate()));
             key.setPublicKey(Crypt.getInstance().getBase64Encoded(pair.getPublic()));
             key.save();
@@ -69,7 +70,7 @@ public class AppInstaller implements Installer {
         encryptionKey.setAlias(subscriberId+ ".encrypt.k1");
         encryptionKey = Database.getTable(CryptoKey.class).getRefreshed(encryptionKey);
         if (encryptionKey.getRawRecord().isNewRecord()) {
-            KeyPair pair = Crypt.getInstance().generateKeyPair(Crypt.KEY_ALGO, 2048);
+            KeyPair pair = Crypt.getInstance().generateKeyPair(Request.ENCRYPTION_ALGO, Request.ENCRYPTION_ALGO_KEY_LENGTH);
             encryptionKey.setPrivateKey(Crypt.getInstance().getBase64Encoded(pair.getPrivate()));
             encryptionKey.setPublicKey(Crypt.getInstance().getBase64Encoded(pair.getPublic()));
             encryptionKey.save();
