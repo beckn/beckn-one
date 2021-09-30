@@ -22,6 +22,8 @@ public class BecknOnePrivateKeyFinder implements Extension {
         ObjectHolder<String> privateKeyHolder = (ObjectHolder<String>) context[2];
         List<CryptoKey> keys = new Select().from(CryptoKey.class).where(
                 new Expression(ModelReflector.instance(CryptoKey.class).getPool(),"ALIAS", Operator.EQ,uniqueKeyId)).execute();
-        privateKeyHolder.set(keys.get(0).getPrivateKey());
+        if (!keys.isEmpty()){
+            privateKeyHolder.set(keys.get(0).getPrivateKey());
+        }
     }
 }

@@ -19,7 +19,7 @@ then
     baseurl="http://localhost:${wport}"
 fi
 
-echo curl -s -H "content-type: application/json" "${baseurl}/login" -d '{ "User" : { "Name":"'$user'" , "Password":"'$password'"} } ' 
+#echo curl -s -H "content-type: application/json" "${baseurl}/login" -d '{ "User" : { "Name":"'$user'" , "Password":"'$password'"} } ' 
 curl -s -H "content-type: application/json" "${baseurl}/login" -d '{ "User" : { "Name":"'$user'" , "Password":"'$password'"} } ' |grep 'ApiKey' |cut -f2 -d ':' |sed -e 's/ //g' -e 's/"//g'
 
 
