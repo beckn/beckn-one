@@ -6,6 +6,7 @@ import com.venky.swf.db.annotations.column.validations.Enumeration;
 import com.venky.swf.db.annotations.model.HAS_DESCRIPTION_FIELD;
 import com.venky.swf.db.annotations.model.MENU;
 import com.venky.swf.db.model.Model;
+import in.succinct.beckn.registry.db.model.onboarding.NetworkRole;
 
 import java.util.List;
 
@@ -16,7 +17,7 @@ public interface BecknApi extends Model {
     public String getUniqueName();
 
     @UNIQUE_KEY
-    @Enumeration("bap,bpp,bg,lreg,creg,rreg")
+    @Enumeration(NetworkRole.SUBSCRIBER_ENUM)
     public String getPlatform();
     public void setPlatform(String platform);
 

@@ -26,6 +26,9 @@ import in.succinct.beckn.Message;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.portal.util.DomainMapper;
 import in.succinct.beckn.registry.db.model.Subscriber;
+import in.succinct.beckn.registry.db.model.onboarding.NetworkDomain;
+import in.succinct.beckn.registry.db.model.onboarding.NetworkParticipant;
+import in.succinct.beckn.registry.db.model.onboarding.NetworkRole;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -57,10 +60,11 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
 
 
-        Subscriber calledOn = test.getCalledOnSubscriber();
-        Subscriber caller = test.getProxySubscriber();
+        NetworkRole calledOn = test.getCalledOnSubscriber();
+        NetworkRole caller = test.getProxySubscriber();
         if (caller == null){
-            caller = getSelfSubscription(test.getUseCase().getDomain(),ObjectUtil.equals(calledOn.getType(),Subscriber.SUBSCRIBER_TYPE_BAP)? Subscriber.SUBSCRIBER_TYPE_BPP : Subscriber.SUBSCRIBER_TYPE_BAP);
+            caller = getSelfSubscription(test.getUseCase().getDomain(),ObjectUtil.equals(calledOn.getType(), NetworkRole.SUBSCRIBER_TYPE_BAP)?
+                    NetworkRole.SUBSCRIBER_TYPE_BPP : NetworkRole.SUBSCRIBER_TYPE_BAP);
         }
 
 
@@ -69,7 +73,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         assert caller != null;
         if (Config.instance().getBooleanProperty("beckn.auth.enabled", false)) {
             headers.put("Authorization", request.generateAuthorizationHeader(caller.getSubscriberId(),
-                    String.format("%s.k1", caller.getSubscriberId())));
+                    caller.getNetworkParticipant().getParticipantKeys().get(0).getKeyId()));
         }
         headers.put("Accept", MimeType.APPLICATION_JSON.toString());
         headers.put("Content-Type",MimeType.APPLICATION_JSON.toString());
@@ -78,7 +82,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
         Call<JSONObject> call = new Call<>();
         call.method(HttpMethod.POST).
-                url(calledOn.getSubscriberUrl() +"/" + api.getName()).
+                url(calledOn.getUrl() +"/" + api.getName()).
                 input(request.getInner()).inputFormat(InputFormat.JSON).headers(headers);
         JSONAware response = call.getResponseAsJson();
         if (response == null ){
@@ -147,9 +151,9 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         context.setAction(api.getName());
         context.setDomain(useCase.getDomain());
 
-        Subscriber bap = null;
-        Subscriber bpp = null ;
-        Subscriber bg = null ;
+        NetworkRole bap = null;
+        NetworkRole bpp = null ;
+        NetworkRole bg = null ;
         JSONObject variables = (JSONObject)JSONValue.parse(test.getVariables());
 
         for (Object key : variables.keySet()){
@@ -160,45 +164,45 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
             }
         }
         String apiUsuallycalledOn = "";
-        if (ObjectUtil.equals(api.getPlatform(),Subscriber.SUBSCRIBER_TYPE_BPP)){
+        if (ObjectUtil.equals(api.getPlatform(),NetworkRole.SUBSCRIBER_TYPE_BPP)){
             bpp = test.getCalledOnSubscriber();
-            apiUsuallycalledOn = Subscriber.SUBSCRIBER_TYPE_BPP;
-        }else if (ObjectUtil.equals(api.getPlatform(),Subscriber.SUBSCRIBER_TYPE_BAP)){
+            apiUsuallycalledOn = NetworkRole.SUBSCRIBER_TYPE_BPP;
+        }else if (ObjectUtil.equals(api.getPlatform(),NetworkRole.SUBSCRIBER_TYPE_BAP)){
             bap = test.getCalledOnSubscriber();
-            apiUsuallycalledOn = Subscriber.SUBSCRIBER_TYPE_BAP;
+            apiUsuallycalledOn = NetworkRole.SUBSCRIBER_TYPE_BAP;
 
-        }else if (ObjectUtil.equals(api.getPlatform(),Subscriber.SUBSCRIBER_TYPE_BG)){
+        }else if (ObjectUtil.equals(api.getPlatform(),NetworkRole.SUBSCRIBER_TYPE_BG)){
             bg = test.getCalledOnSubscriber();
             List<BecknApi> apis  = new Select().from(BecknApi.class).where(new Expression(getPool(), Conjunction.AND).add(
-                    new Expression(getPool(),"PLATFORM" , Operator.NE, Subscriber.SUBSCRIBER_TYPE_BG)).add(
+                    new Expression(getPool(),"PLATFORM" , Operator.NE, NetworkRole.SUBSCRIBER_TYPE_BG)).add(
                             new Expression(getPool(),"NAME",Operator.EQ,api.getName()) ) ).execute();
             apiUsuallycalledOn = apis.get(0).getPlatform();
         }
         if (test.getProxySubscriberId() != null){
-            Subscriber s = test.getProxySubscriber();
-            if (bap == null && ObjectUtil.equals(s.getType(), Subscriber.SUBSCRIBER_TYPE_BAP)){
+            NetworkRole s = test.getProxySubscriber();
+            if (bap == null && ObjectUtil.equals(s.getType(), NetworkRole.SUBSCRIBER_TYPE_BAP)){
                 bap = s;
             }
-            if (bpp == null && ObjectUtil.equals(s.getType(),Subscriber.SUBSCRIBER_TYPE_BPP)){
+            if (bpp == null && ObjectUtil.equals(s.getType(),NetworkRole.SUBSCRIBER_TYPE_BPP)){
                 bpp = s;
             }
         }else {
             if (bap == null){
-                bap = getSelfSubscription(useCase.getDomain(),Subscriber.SUBSCRIBER_TYPE_BAP);
+                bap = getSelfSubscription(useCase.getDomain(),NetworkRole.SUBSCRIBER_TYPE_BAP);
             }
             if (bpp == null){
-                bpp = getSelfSubscription(useCase.getDomain(),Subscriber.SUBSCRIBER_TYPE_BPP);
+                bpp = getSelfSubscription(useCase.getDomain(),NetworkRole.SUBSCRIBER_TYPE_BPP);
             }
         }
 
 
         if (bap != null && context.getBapId() == null) {
             context.setBapId(bap.getSubscriberId());
-            context.setBapUri(bap.getSubscriberUrl());
+            context.setBapUri(bap.getUrl());
         }
         if (bpp != null && context.getBppId() == null && bg == null) {
             context.setBppId(bpp.getSubscriberId());
-            context.setBppUri(bpp.getSubscriberUrl());
+            context.setBppUri(bpp.getUrl());
         }
         if (ObjectUtil.isVoid(context.getBppId()) && bg == null){
             throw new RuntimeException("Cannot determine participants in the interaction");
@@ -225,20 +229,27 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
 
 
-    private Subscriber getSelfSubscription(String realDomain, String type) {
-        String domain = DomainMapper.getMapping(realDomain);
-        Subscriber criteria = Database.getTable(Subscriber.class).newRecord();
-        criteria.setSubscriberId(Config.instance().getHostName() + "." + domain +"."+ type);
-        criteria.setDomain(realDomain);
-        criteria.setType(type);
-        criteria.setStatus(Subscriber.SUBSCRIBER_STATUS_SUBSCRIBED);
+    private NetworkRole getSelfSubscription(String realDomain, String type) {
+        NetworkParticipant participant = Database.getTable(NetworkParticipant.class).newRecord();
+        participant.setParticipantId(Config.instance().getHostName());
+        participant = Database.getTable(NetworkParticipant.class).getRefreshed(participant);
 
-        List<Subscriber> subscribers = Subscriber.lookup(criteria,10);
-        if (!subscribers.isEmpty()){
-            return subscribers.get(0);
+
+        String domain = DomainMapper.getMapping(realDomain);
+        NetworkRole role = Database.getTable(NetworkRole.class).newRecord();
+        role.setNetworkParticipantId(participant.getId());
+        role.setNetworkDomainId(NetworkDomain.find(realDomain).getId());
+        role.setType(type);
+        role = Database.getTable(NetworkRole.class).getRefreshed(role);
+
+        if (role.getRawRecord().isNewRecord()){
+            return null;
+        }else if (!ObjectUtil.equals(role.getStatus(),NetworkRole.SUBSCRIBER_STATUS_SUBSCRIBED)){
+            return null;
+        }else{
+            return role;
         }
 
-        return null;
     }
 
 

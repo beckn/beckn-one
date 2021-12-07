@@ -5,6 +5,7 @@ import com.venky.swf.db.annotations.column.pm.PARTICIPANT;
 import com.venky.swf.db.annotations.column.ui.WATERMARK;
 import com.venky.swf.db.model.Model;
 import in.succinct.beckn.registry.db.model.Subscriber;
+import in.succinct.beckn.registry.db.model.onboarding.NetworkRole;
 
 import java.io.Reader;
 import java.util.List;
@@ -26,11 +27,11 @@ public interface ApiTest extends Model {
 
     public Long getCalledOnSubscriberId();
     public void setCalledOnSubscriberId(Long id);
-    public Subscriber getCalledOnSubscriber();
+    public NetworkRole getCalledOnSubscriber();
 
     public Long getProxySubscriberId();
     public void setProxySubscriberId(Long  id);
-    public Subscriber getProxySubscriber();
+    public NetworkRole getProxySubscriber();
 
 
     @WATERMARK("Enter variable values as json. e.g. {\"var1\" : \"value1\" , \"var2\" : \"value2\"}" )

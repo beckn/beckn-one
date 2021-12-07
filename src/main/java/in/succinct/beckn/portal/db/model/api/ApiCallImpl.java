@@ -1,6 +1,5 @@
 package in.succinct.beckn.portal.db.model.api;
 
-import com.venky.swf.db.Database;
 import com.venky.swf.db.model.io.json.JSONFormatter;
 import com.venky.swf.db.table.ModelImpl;
 import com.venky.swf.integration.api.Call;
@@ -29,7 +28,7 @@ public class ApiCallImpl extends ModelImpl<ApiCall> {
 
         Call<?> call = new Call<InputStream>().
                 method(HttpMethod.POST).
-                url(apiCall.getApiTest().getCalledOnSubscriber().getSubscriberUrl() +"/" + apiCall.getApiTest().getUseCase().getBecknApi().getName()).
+                url(apiCall.getApiTest().getCalledOnSubscriber().getUrl() +"/" + apiCall.getApiTest().getUseCase().getBecknApi().getName()).
                 input(new ByteArrayInputStream(apiCall.getRequestPayLoad().getBytes(StandardCharsets.UTF_8))).
                 inputFormat(InputFormat.INPUT_STREAM).headers(headers);
 

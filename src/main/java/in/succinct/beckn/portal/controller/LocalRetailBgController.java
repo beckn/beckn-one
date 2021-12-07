@@ -2,25 +2,17 @@ package in.succinct.beckn.portal.controller;
 
 import com.venky.core.string.StringUtil;
 import com.venky.core.util.ObjectUtil;
-import com.venky.geo.GeoCoordinate;
 import com.venky.swf.controller.Controller;
 import com.venky.swf.controller.annotations.RequireLogin;
 import com.venky.swf.db.Database;
 import com.venky.swf.db.annotations.column.ui.mimes.MimeType;
-import com.venky.swf.db.model.Model;
 import com.venky.swf.integration.api.Call;
 import com.venky.swf.integration.api.HttpMethod;
 import com.venky.swf.integration.api.InputFormat;
 import com.venky.swf.path.Path;
 import com.venky.swf.plugins.background.core.Task;
 import com.venky.swf.plugins.background.core.TaskManager;
-import com.venky.swf.plugins.collab.util.BoundingBox;
-import com.venky.swf.controller.TemplatedController;
 import com.venky.swf.routing.Config;
-import com.venky.swf.sql.Conjunction;
-import com.venky.swf.sql.Expression;
-import com.venky.swf.sql.Operator;
-import com.venky.swf.sql.Select;
 import com.venky.swf.views.BytesView;
 import com.venky.swf.views.View;
 import in.succinct.beckn.Acknowledgement;
@@ -31,16 +23,16 @@ import in.succinct.beckn.Error;
 import in.succinct.beckn.Fulfillment;
 import in.succinct.beckn.Fulfillment.FulfillmentType;
 import in.succinct.beckn.FulfillmentStop;
+import in.succinct.beckn.Intent;
 import in.succinct.beckn.Location;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.Response;
 import in.succinct.beckn.User;
 import in.succinct.beckn.portal.util.DomainMapper;
-import in.succinct.beckn.registry.db.model.City;
-import in.succinct.beckn.registry.db.model.Country;
 import in.succinct.beckn.registry.db.model.Subscriber;
-import in.succinct.beckn.registry.db.model.Subscriber.SubscriberWithLocations;
-import in.succinct.beckn.registry.db.model.SubscriberLocation;
+import in.succinct.beckn.registry.db.model.onboarding.NetworkDomain;
+import in.succinct.beckn.registry.db.model.onboarding.NetworkParticipant;
+import in.succinct.beckn.registry.db.model.onboarding.NetworkRole;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
@@ -51,12 +43,8 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class LocalRetailBgController extends Controller {
     public LocalRetailBgController(Path path) {
@@ -90,47 +78,20 @@ public class LocalRetailBgController extends Controller {
                 Context context = request.getContext();
                 if ("search".equals(request.getContext().getAction())){
                     Subscriber criteria = getCriteria(request);
-                    criteria.setType(Subscriber.SUBSCRIBER_TYPE_BPP);
-
+                    criteria.setType(NetworkRole.SUBSCRIBER_TYPE_BPP);
                     List<Subscriber> subscriberList ;
-                    Circle deliveryRegion = getDeliveryRegion(request);
 
-                    if (!ObjectUtil.isVoid(context.getBppId()) || deliveryRegion == null){
+                    if (!ObjectUtil.isVoid(context.getBppId())){
                         criteria.setSubscriberId(context.getBppId());
-                        subscriberList = Subscriber.lookup(criteria,0);
-                    }else {
-                        Select select = new Select("MAX(ID) AS ID","SUBSCRIBER_ID").from(SubscriberLocation.class);
-
-                        Expression where = new Expression(select.getPool(), Conjunction.AND);
-                        where.add(new Expression(select.getPool(),"ACTIVE",Operator.EQ,true));
-
-                        if (deliveryRegion.getRadius() == 0){
-                            GeoCoordinate gps = deliveryRegion.getGps();
-                            where.add(new Expression(select.getPool(), "MIN_LAT",Operator.LE,gps.getLat()));
-                            where.add(new Expression(select.getPool(), "MAX_LAT",Operator.GE,gps.getLat()));
-                            where.add(new Expression(select.getPool(), "MIN_LNG",Operator.LE,gps.getLng()));
-                            where.add(new Expression(select.getPool(), "MAX_LNG",Operator.GE,gps.getLng()));
-                            where.add(new Expression(select.getPool(),"RADIUS",Operator.GT,0));
-                            //User wants delivery. So only lookup are providers who deliver.
-                        }else {
-                            BoundingBox bb = new BoundingBox(deliveryRegion.getGps(), 0, deliveryRegion.getRadius());
-                            where.add(bb.getWhereClause(SubscriberLocation.class));
-                        }
-                        List<SubscriberLocation> locations = select.where(where).groupBy("SUBSCRIBER_ID").execute();
-                        subscriberList = Subscriber.lookup(criteria,0,null, SubscriberWithLocations.NO);
-
-                        for (Iterator<SubscriberLocation> i = locations.iterator() ; i.hasNext() ;) {
-                            SubscriberLocation subscriberLocation = i.next();
-                            subscriberList.add(subscriberLocation.getSubscriber());
-                        }
-
                     }
+
+                    subscriberList = Subscriber.lookup(criteria,0);
                     for (Subscriber subscriber : subscriberList){
                         tasks.add(new Search(request,subscriber,getPath().getHeaders()));
                     }
                 }else if ("on_search".equals(request.getContext().getAction())){
                     Subscriber criteria = getCriteria(request);
-                    criteria.setType(Subscriber.SUBSCRIBER_TYPE_BAP);
+                    criteria.setType(NetworkRole.SUBSCRIBER_TYPE_BAP);
                     if (!ObjectUtil.isVoid(context.getBapId())){
                         criteria.setSubscriberId(context.getBapId());
                     }else  {
@@ -166,13 +127,16 @@ public class LocalRetailBgController extends Controller {
         Context context = request.getContext();
         User user = context.getUser();
         List<Location> possibleLocations = new ArrayList<>();
-
-        Fulfillment fulfillment = request.getMessage().getIntent().getFulfillment();
-        if (fulfillment != null){
+        Intent intent = request.getMessage().getIntent();
+        if (intent == null) {
+            return null;
+        }
+        Fulfillment fulfillment = intent.getFulfillment();
+        if (fulfillment != null) {
             FulfillmentStop end = fulfillment.getEnd();
-            if (end != null){
+            if (end != null) {
                 Location location = end.getLocation();
-                if (location != null){
+                if (location != null) {
                     possibleLocations.add(location);
                 }
             }
@@ -216,20 +180,19 @@ public class LocalRetailBgController extends Controller {
         String countryCode = context.get("country");
         String cityCode = context.get("city");
         if (countryCode != null){
-            Country country = Database.getTable(Country.class).newRecord();
-            country.setCode(countryCode);
-            country = Database.getTable(Country.class).getRefreshed(country);
-            criteria.setCountryId(country.getId());
+            criteria.setCountry(countryCode);
         }
-
         if (!ObjectUtil.isVoid(cityCode)){
-            City city = Database.getTable(City.class).newRecord();
-            city.setCode(cityCode);
-            city = Database.getTable(City.class).getRefreshed(city);
-            criteria.setCityId(city.getId());
+            criteria.setCity(cityCode);
         }
         criteria.setDomain(context.getDomain());
-        criteria.setStatus(Subscriber.SUBSCRIBER_STATUS_SUBSCRIBED);
+        criteria.setStatus(NetworkRole.SUBSCRIBER_STATUS_SUBSCRIBED);
+        Circle deliveryRegion = getDeliveryRegion(request);
+        if (deliveryRegion != null ){
+            criteria.setLat(deliveryRegion.getGps().getLat());
+            criteria.setLng(deliveryRegion.getGps().getLng());
+            criteria.setRadius(deliveryRegion.getRadius());
+        }
 
         return criteria;
     }
@@ -246,14 +209,31 @@ public class LocalRetailBgController extends Controller {
     protected static Map<String, String> getHeaders(Request request) {
         Map<String,String> headers  = new HashMap<>();
         if (Config.instance().getBooleanProperty("beckn.auth.enabled", false)) {
-            String subscriberId = Config.instance().getHostName() + "." + DomainMapper.getMapping(request.getContext().getDomain()) + ".bg" ;
-            headers.put("Proxy-Authorization", request.generateAuthorizationHeader(subscriberId,
-                    subscriberId + ".k1"));
+
+            String subscriberId = getSelfSubscription().getSubscriberId();
+            headers.put("X-Gateway-Authorization", request.generateAuthorizationHeader(subscriberId,
+                    NetworkRole.find(subscriberId).getNetworkParticipant().getParticipantKeys().get(0).getKeyId()));
         }
         headers.put("Content-Type", MimeType.APPLICATION_JSON.toString());
         headers.put("Accept", MimeType.APPLICATION_JSON.toString());
 
         return headers;
+    }
+    private static NetworkRole getSelfSubscription() {
+        NetworkParticipant participant = NetworkParticipant.find(Config.instance().getHostName());
+        NetworkRole role = Database.getTable(NetworkRole.class).newRecord();
+        role.setNetworkParticipantId(participant.getId());
+        role.setType(NetworkRole.SUBSCRIBER_TYPE_BG);
+        role = Database.getTable(NetworkRole.class).getRefreshed(role);
+
+        if (role.getRawRecord().isNewRecord()){
+            return null;
+        }else if (!ObjectUtil.equals(role.getStatus(),NetworkRole.SUBSCRIBER_STATUS_SUBSCRIBED)){
+            return null;
+        }else{
+            return role;
+        }
+
     }
 
     public static class Search implements Task {
@@ -273,6 +253,7 @@ public class LocalRetailBgController extends Controller {
             Call<InputStream> call = new Call<InputStream>().url(bpp.getSubscriberUrl()+ "/"+clone.getContext().getAction()).
                     method(HttpMethod.POST).inputFormat(InputFormat.INPUT_STREAM).
                     input(new ByteArrayInputStream(clone.toString().getBytes(StandardCharsets.UTF_8))).headers(getHeaders(clone));
+
             if (headers != null && headers.containsKey("Authorization")){
                 call.header("Authorization",headers.get("Authorization"));
             }
