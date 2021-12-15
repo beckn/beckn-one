@@ -46,8 +46,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class LocalRetailBgController extends Controller {
-    public LocalRetailBgController(Path path) {
+public class BgController extends Controller {
+    public BgController(Path path) {
         super(path);
     }
     public View nack(Request request, String realm){
