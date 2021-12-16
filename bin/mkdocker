@@ -1,0 +1,24 @@
+mvn clean -DskipTests=true package
+rm -rf tmp/portal-docker
+
+mkdir tmp/portal-docker
+cp -Rp .keystore/ target overrideProperties bin tmp/portal-docker/
+ln -sf docker.properties tmp/portal-docker/overrideProperties/config/swf.properties
+
+tag=`date +%Y%m%d%H%M%S`
+echo 'MAILTO=""
+* * * * * /portal/bin/trigger PERSISTED_TASK_POLLER' >  tmp/portal-docker/crontab.txt
+
+echo "#!/bin/sh 
+crond -bS;
+
+/usr/bin/java -Xmx4g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=tmp/java.hprof -XX:-OmitStackTraceInFastThrow -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=3000", "-DPORT=3030 -Dswf.env=production -Dswf.pidfile=tmp/pid -Dderby.locks.waitTimeout=10 -DSystem.out.close=true -DSystem.err.close=true -DSystem.in.close=true -cp overrideProperties/:target/classes/:target/dependency/swf-plugin-ecommerce-2.6-SNAPSHOT.jar:target/dependency/swf-plugin-slideshow-2.6-SNAPSHOT.jar:target/dependency/swf-plugin-collab-2.6-SNAPSHOT.jar:target/dependency/swf-plugin-calendar-2.6-SNAPSHOT.jar:target/dependency/swf-plugin-templates-2.6-SNAPSHOT.jar:target/dependency/swf-plugin-mail-2.6-SNAPSHOT.jar:target/dependency/swf-plugin-mobilesignup-2.6-SNAPSHOT.jar:target/dependency/swf-plugin-bugs-2.6-SNAPSHOT.jar:target/dependency/swf-plugin-wiki-2.6-SNAPSHOT.jar:target/dependency/swf-plugin-datamart-2.6-SNAPSHOT.jar:target/dependency/swf-2.6-SNAPSHOT.jar:target/dependency/swf-db-io-json-2.6-SNAPSHOT.jar:target/dependency/swf-db-io-xls-2.6-SNAPSHOT.jar:target/dependency/swf-db-io-xml-2.6-SNAPSHOT.jar:target/dependency/swf-db-2.6-SNAPSHOT.jar:target/dependency/* com.venky.swf.JettyServer
+
+">tmp/portal-docker/bin/service-start
+
+chmod +x tmp/portal-docker/bin/service-start
+
+
+docker build -t beckn/beckn-one:${tag} .
+#docker image tag portal:$tag portal:latest 
+docker container create --name portal.${tag} beckn/beckn-one:${tag} 
