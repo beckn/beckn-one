@@ -20,5 +20,5 @@ chmod +x tmp/portal-docker/bin/service-start
 
 
 docker build -t beckn/beckn-one:${tag} .
-#docker image tag portal:$tag portal:latest 
-docker container create --name portal.${tag} beckn/beckn-one:${tag} 
+docker image tag beckn/beckn-one:${tag} beckn/beckn-one:latest 
+docker container create --name beckn-one.${tag} beckn/beckn-one:latest
