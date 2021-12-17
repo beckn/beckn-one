@@ -211,8 +211,11 @@ public class BgController extends Controller {
         if (Config.instance().getBooleanProperty("beckn.auth.enabled", false)) {
 
             String subscriberId = getSelfSubscription().getSubscriberId();
-            headers.put("X-Gateway-Authorization", request.generateAuthorizationHeader(subscriberId,
-                    NetworkRole.find(subscriberId).getNetworkParticipant().getParticipantKeys().get(0).getKeyId()));
+            String authHeader = request.generateAuthorizationHeader(subscriberId,
+                    NetworkRole.find(subscriberId).getNetworkParticipant().getParticipantKeys().get(0).getKeyId());
+            headers.put("X-Gateway-Authorization", authHeader);
+            headers.put("Proxy-Authorization", authHeader);
+
         }
         headers.put("Content-Type", MimeType.APPLICATION_JSON.toString());
         headers.put("Accept", MimeType.APPLICATION_JSON.toString());
