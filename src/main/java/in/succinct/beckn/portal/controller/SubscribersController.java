@@ -19,10 +19,10 @@ public class SubscribersController extends in.succinct.beckn.registry.controller
     @RequireLogin(value = false)
     public View sign(String headerName) throws Exception{
         Map<String,String> headers = getPath().getHeaders();
-        String  uniqueKeyId = headers.get("unique_key_id");
+        String  pub_key_id = headers.get("pub_key_id");
         String  subscriberId = headers.get("subscriber_id");
         String payload = StringUtil.read(getPath().getInputStream());
-        String header = new Request(payload).generateAuthorizationHeader(subscriberId,uniqueKeyId);
+        String header = new Request(payload).generateAuthorizationHeader(subscriberId,pub_key_id);
         JSONObject out = new JSONObject();
         out.put("Authorization",header);
         return new BytesView(getPath(),out.toString().getBytes(), MimeType.APPLICATION_JSON);
