@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class LocalDeliveryBapController extends Controller {
     public LocalDeliveryBapController(Path path) {
@@ -104,6 +105,7 @@ public class LocalDeliveryBapController extends Controller {
             response.setError(error);
             error.setCode(ex.getMessage());
             error.setMessage(ex.getMessage());
+            Config.instance().getLogger(getClass().getName()).log(Level.WARNING,"API failed",ex);
             return new BytesView(getPath(),response.toString().getBytes(StandardCharsets.UTF_8));
         }
     }

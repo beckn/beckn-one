@@ -17,7 +17,7 @@ function refreshCache(){
                 fetch("/cache_versions/last",{headers:{'content-type' :'application/json'}}).then(function(response){
                     return response.json();
                 }).then(function(response){
-                    return cachePrefix + '-v'+ (response.version_number * 1.0).toFixed(0);
+                    return cachePrefix + '-v'+ (response.CacheVersion.VersionNumber * 1.0).toFixed(0);
                 }).then(function(version){
                     staticCacheName = version;
                     caches.keys().then(function(cacheNames){

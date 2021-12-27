@@ -1,6 +1,7 @@
 package in.succinct.beckn.portal.db.model.collab;
 
 import com.venky.swf.db.annotations.column.COLUMN_DEF;
+import com.venky.swf.db.annotations.column.COLUMN_NAME;
 import com.venky.swf.db.annotations.column.IS_VIRTUAL;
 import com.venky.swf.db.annotations.column.UNIQUE_KEY;
 import com.venky.swf.db.annotations.column.defaulting.StandardDefault;
@@ -30,8 +31,9 @@ public interface Member extends Model {
     public void setActive(boolean active);
 
     @COLUMN_DEF(StandardDefault.BOOLEAN_FALSE)
-    public boolean isAdmin();
-    public void setAdmin(boolean admin);
+    @COLUMN_NAME("ADMIN")
+    public boolean isCommunityAdmin();
+    public void setCommunityAdmin(boolean admin);
 
     @IS_VIRTUAL
     public boolean isLoggedInUserCommunityAdmin();

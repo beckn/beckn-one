@@ -19,7 +19,7 @@ public class BeforeSaveMember extends BeforeModelSaveExtension<Member> {
     public void beforeSave(Member model) {
         if (!model.isActive() && model.getRawRecord().isFieldDirty("ACTIVE")){
             // member is leaving.
-            if (!model.isAdmin() && model.getRawRecord().isFieldDirty("ADMIN")){
+            if (!model.isCommunityAdmin() && model.getRawRecord().isFieldDirty("ADMIN")){
                 Community community = Database.getTable(Community.class).lock(model.getCommunityId());
 
                 List<Member> administrators = new Select().from(Member.class).where(

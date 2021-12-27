@@ -150,6 +150,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         Context context = new Context();
         context.setAction(api.getName());
         context.setDomain(useCase.getDomain());
+        context.setTtl(60);
 
         NetworkRole bap = null;
         NetworkRole bpp = null ;
@@ -160,7 +161,12 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
             if (key.toString().startsWith("context.")){
                 String contextKey = key.toString().replace("context.","");
                 Object value = variables.get(key);
-                context.set(contextKey,String.valueOf(value));
+                if (value == null){
+                    context.getInner().remove(contextKey);
+                }else {
+                    context.set(contextKey, String.valueOf(value));
+                }
+
             }
         }
         String apiUsuallycalledOn = "";
@@ -210,7 +216,6 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
             throw new RuntimeException("Cannot determine participants in the interaction");
         }
         context.setTimestamp(new Date());
-        context.setTtl(60);
         context.setCoreVersion("0.9.1");
 
         String messageId = UUID.randomUUID().toString(); //SequentialNumber.get("BECKN_MESSAGE_ID").next();

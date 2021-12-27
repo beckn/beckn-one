@@ -24,7 +24,7 @@ public class CommunityImpl extends ModelImpl<Community> {
         Member member = getMember(Database.getInstance().getCurrentUser());
         if (member != null) {
             member.setActive(true);
-            member.setAdmin(false);
+            member.setCommunityAdmin(false);
             member.save();
         }
     }
@@ -55,11 +55,11 @@ public class CommunityImpl extends ModelImpl<Community> {
                 //Trying to promote myself
                 memberPromoted = me;
             }
-        }else if (me.isAdmin() && me.isActive() && !me.isDirty() && me.getUserId() != id) {
+        }else if (me.isCommunityAdmin() && me.isActive() && !me.isDirty() && me.getUserId() != id) {
             memberPromoted = getMember(id);
         }
-        if (!memberPromoted.isAdmin()){
-            memberPromoted.setAdmin(true);
+        if (!memberPromoted.isCommunityAdmin()){
+            memberPromoted.setCommunityAdmin(true);
             memberPromoted.setActive(true);
             memberPromoted.save();
         }
@@ -81,7 +81,7 @@ public class CommunityImpl extends ModelImpl<Community> {
         Member member = getMember(Database.getInstance().getCurrentUser());
         if (member != null) {
             member.setActive(false);
-            member.setAdmin(false);
+            member.setCommunityAdmin(false);
             member.save();
         }
     }
@@ -106,7 +106,7 @@ public class CommunityImpl extends ModelImpl<Community> {
         if (member == null){
             return false;
         }
-        return member.isAdmin();
+        return member.isCommunityAdmin();
     }
 
 
