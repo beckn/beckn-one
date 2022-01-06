@@ -49,7 +49,7 @@ esac
 
 if [ "${closeStdFd}" = "" ] 
 then 
-    closeStdFd=true;
+    closeStdFd=false;
 fi
 nohup nice -19 java -ea:com.venky  -Xmx4g -XX:+PrintGCDetails -Xloggc:$PWD/tmp/gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/media/heaps/java.hprof -XX:-OmitStackTraceInFastThrow  $DEBUG_OPTS -DPORT=${wport} -Dswf.env=${swf_env} -Dswf.pidfile=$PWD/tmp/pid -Dderby.locks.waitTimeout=10  -DSystem.out.close=${closeStdFd} -DSystem.err.close=${closeStdFd} -DSystem.in.close=${closeStdFd} -cp "overrideProperties/${separator}target/classes/${separator}target/dependency/*" com.venky.swf.JettyServer &
 

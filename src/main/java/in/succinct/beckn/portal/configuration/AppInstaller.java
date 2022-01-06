@@ -21,7 +21,7 @@ public class AppInstaller implements Installer {
     @Override
     public void install() {
         for (String type : new String[]{NetworkRole.SUBSCRIBER_TYPE_BAP,NetworkRole.SUBSCRIBER_TYPE_BG,NetworkRole.SUBSCRIBER_TYPE_BPP}) {
-            for (String domain : new String[]{"nic2004:52110","nic2004:55204"}) {
+            for (String domain : DomainMapper.domains()) {
                 generateBecknKeys(domain, type);
             }
         }
@@ -86,10 +86,8 @@ public class AppInstaller implements Installer {
         role.setType(type);
         if (!ObjectUtil.equals(type,NetworkRole.SUBSCRIBER_TYPE_BG)) {
             role.setNetworkDomainId(networkDomain.getId());
-            role.setUrl(Config.instance().getServerBaseUrl() + "/"+ DomainMapper.getMapping(domain).replace('-', '_') + "_"  +type.toLowerCase() );
-        }else {
-            role.setUrl(Config.instance().getServerBaseUrl() + "/" +type.toLowerCase() );
         }
+        role.setUrl(Config.instance().getServerBaseUrl() + "/"+ type.toLowerCase() );
         role.setStatus(NetworkRole.SUBSCRIBER_STATUS_SUBSCRIBED);
         role = Database.getTable(NetworkRole.class).getRefreshed(role);
         role.save();
