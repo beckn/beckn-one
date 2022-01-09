@@ -71,7 +71,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
         JSONObject headers  = new JSONObject();
         assert caller != null;
-        if (Config.instance().getBooleanProperty("beckn.auth.enabled", false)) {
+        if (Config.instance().getBooleanProperty("beckn.auth.enabled", false) && test.isSignatureNeeded() ) {
             headers.put("Authorization", request.generateAuthorizationHeader(caller.getSubscriberId(),
                     caller.getNetworkParticipant().getParticipantKeys().get(0).getKeyId()));
         }

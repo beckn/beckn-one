@@ -1,7 +1,9 @@
 package in.succinct.beckn.portal.db.model.api;
 
+import com.venky.swf.db.annotations.column.COLUMN_DEF;
 import com.venky.swf.db.annotations.column.COLUMN_SIZE;
 import com.venky.swf.db.annotations.column.UNIQUE_KEY;
+import com.venky.swf.db.annotations.column.defaulting.StandardDefault;
 import com.venky.swf.db.annotations.column.pm.PARTICIPANT;
 import com.venky.swf.db.model.Model;
 
@@ -46,6 +48,9 @@ public interface ApiCall extends Model {
     public String getCallBackHeaders();
     public void setCallBackHeaders(String headers);
 
+    @COLUMN_DEF(StandardDefault.BOOLEAN_FALSE)
+    public Boolean isSignatureNeeded();
+    public void setSignatureNeeded(Boolean signatureNeeded);
 
     public void execute();
 }
