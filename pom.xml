@@ -70,7 +70,7 @@
         </dependency>
         <dependency>
             <groupId>com.github.venkatramanm.swf-all</groupId>
-            <artifactId>swf-plugin-wiki</artifactId>
+            <artifactId>swf</artifactId>
             <version>${revision}</version>
         </dependency>
 

@@ -1,6 +1,7 @@
-# Welcome to Beckn One (BECKN Open NEwork)
+# Welcome to the **BECKN O**pen **NE**twork
 
-Beckn One is an Open Network which has: 
+## What is it?
+Beckn One is an Open Network based on the beckn protocol which has: 
 
 * A fully functional self serviced registry. 
 * A Gateway.
@@ -8,10 +9,11 @@ Beckn One is an Open Network which has:
 * A BAP Testing tool in the form of a BPP. 
 
 
-Beckn application programmers can use this portal to validate their beckn implementations. 
+Beckn application programmers can use this portal to validate their beckn implementations using their domain specific test bpps (whose subscriber ids are of the form beckn-one.succinct.in.${domain}.BPP) or test baps (whose ids are of the form beckn-one.succinct.in.${domain}.BAP)  Developers can also use this portal to test each other's implemenation.
 
 
 ## Quick Links
+0. [What Beckn One is not](what_beckn_one_is_not.md)
 1. [Getting Started](getting_started.md)
 2. [Beckn One Network](register_beckn_one.md)
 3. [Api Documentation](api_documents.md)
