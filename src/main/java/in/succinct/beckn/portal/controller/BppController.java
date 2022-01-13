@@ -5,7 +5,7 @@ import com.venky.swf.controller.Controller;
 import com.venky.swf.controller.annotations.RequireLogin;
 import com.venky.swf.db.annotations.column.ui.mimes.MimeType;
 import com.venky.swf.path.Path;
-import com.venky.swf.controller.TemplatedController;
+import com.venky.swf.plugins.background.core.TaskManager;
 import com.venky.swf.routing.Config;
 import com.venky.swf.views.BytesView;
 import com.venky.swf.views.View;
@@ -15,6 +15,8 @@ import in.succinct.beckn.Error;
 import in.succinct.beckn.Options;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.Response;
+import in.succinct.beckn.portal.util.BecknActionCallBack;
+import in.succinct.beckn.portal.util.BecknMessagePublisher;
 import org.json.simple.JSONArray;
 
 import javax.servlet.http.HttpServletResponse;
@@ -45,12 +47,19 @@ public class BppController extends Controller {
         return new BytesView(getPath(),new Response(request.getContext(),ack).toString().getBytes(StandardCharsets.UTF_8));
     }
 
+    protected View act(){
+        return act(null);
+    }
 
-    private View act(){
+
+    protected  <T extends BecknActionCallBack> View act(T callback){
         Request request = null;
         try {
             request = new Request(StringUtil.read(getPath().getInputStream()));
             if (!Config.instance().getBooleanProperty("beckn.auth.enabled", false)  || request.verifySignature("Authorization",getPath().getHeaders())){
+                if (callback != null){
+                    return callback.execute(request,getPath().getHeaders());
+                }
                 return ack(request);
             }else {
                 return nack(request,request.getContext().getBapId());

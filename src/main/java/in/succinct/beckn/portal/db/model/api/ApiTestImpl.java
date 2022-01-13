@@ -113,7 +113,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         String messagePayload ;
         try {
             StringWriter writer = new StringWriter();
-            TemplateEngine.getInstance().publish(new Template("message",messageTemplate,getConfiguration()),
+            new Template("message",messageTemplate,getConfiguration()).process(
                     (JSONObject)JSONValue.parse(test.getVariables()),writer);
             messagePayload = writer.toString();
         }catch (Exception ex){
