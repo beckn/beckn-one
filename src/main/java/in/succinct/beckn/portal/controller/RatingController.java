@@ -6,19 +6,18 @@ import com.venky.swf.controller.annotations.RequireLogin;
 import com.venky.swf.db.Database;
 import com.venky.swf.db.annotations.column.ui.mimes.MimeType;
 import com.venky.swf.path.Path;
+import com.venky.swf.plugins.background.messaging.MessageAdaptorFactory;
 import com.venky.swf.views.BytesView;
 import com.venky.swf.views.View;
 import in.succinct.beckn.Context;
 import in.succinct.beckn.Rating;
 import in.succinct.beckn.Request;
-import in.succinct.beckn.portal.util.BecknActionCallBack;
 import in.succinct.beckn.portal.util.BecknMessagePublisher;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import java.util.Map;
 
 public class RatingController extends BppController{
@@ -30,12 +29,9 @@ public class RatingController extends BppController{
 
     @RequireLogin(false)
     public View submit_rating(){
-        return act(new BecknActionCallBack() {
-            @Override
-            public View execute(Request request, Map<String, String> requestHeaders) {
-                new RatingPublisher(request,requestHeaders).publishAsync();
-                return ack(request);
-            }
+        return act((request, requestHeaders) -> {
+            new RatingPublisher(request,requestHeaders).publishAsync();
+            return ack(request);
         });
 
     }
@@ -114,8 +110,7 @@ public class RatingController extends BppController{
                     append("/").append(rating.getId()).
                     append("/").append(getEventName());
 
-            publishAsync(topic.toString(),event);
-            // super.publishAsync(topic, event);
+            MessageAdaptorFactory.getInstance().getDefaultMessageAdaptor().publish(topic.toString(),event);
         }
     }
 

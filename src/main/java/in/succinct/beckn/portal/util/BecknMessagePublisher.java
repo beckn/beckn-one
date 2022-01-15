@@ -1,11 +1,11 @@
 package in.succinct.beckn.portal.util;
 
-import com.ondc.client.mqtt.MqttPublisher;
+
 import in.succinct.beckn.Request;
 
 import java.util.Map;
 
-public abstract class BecknMessagePublisher extends MqttPublisher {
+public abstract class BecknMessagePublisher {
     Request request ;
     Map<String,String> requestHeaders ;
     public BecknMessagePublisher(Request request,Map<String,String> requestHeaders){
