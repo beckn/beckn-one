@@ -15,7 +15,3 @@ Architecturally it is not different from any other open network powered by beckn
 
 
 Beckn application programmers can use the hosted instance of this repo at [this](https://beckn-one.succinct.in/) portal to validate their own  beckn implementation using the the test bpps (whose subscriber ids are of the form beckn-one.succinct.in.\*.BPP) or test baps (whose ids are of the form beckn-one.succinct.in.\*.BAP)  Developers can also use this portal to test each other's implemenation. 
-
-
-
-
