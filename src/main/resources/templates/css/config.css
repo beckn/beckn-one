@@ -1,0 +1,8 @@
+:root {
+    --hbo-bg: #f8f6f6;
+    --hbo-bg-header:#000070;
+    --hbo-red: #ff0033;
+    --hbo-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    --hbo-shadow-bottom: 0 2px 5px rgba(0, 0, 0, 0.3);
+    --hbo-font: "Poppins", sans-serif, arial;
+}

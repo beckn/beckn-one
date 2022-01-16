@@ -5,6 +5,7 @@
 *.iml
 tmp/
 overrideProperties/
+overrideProperties.sample.zip
 nohup.out
 database/
 /.gradle/

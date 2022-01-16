@@ -1,0 +1,72 @@
+<script type="text/javascript" src="/resources/scripts/node_modules/axios/dist/axios.min.js" defer></script>
+<script type="text/javascript" src="/resources/scripts/node_modules/vue/dist/vue.js" defer></script>
+<script type="text/javascript" src="/resources/scripts/swf/js/entity_helper.js" defer></script>
+
+<script type="text/javascript" src="/js/util.js" defer></script>
+<link rel="preload" as="style" href="/css/portal.css" onload="this.onload=null;this.rel='stylesheet'" >
+
+<script type="text/javascript">
+    $(function () {
+        new Vue({
+            el: "#app",
+            data: {
+                user: Lockr.get("User") ,
+                participants: [] ,
+            },
+            created: function () {
+                let self = this;// Needed to set inside then statements
+                showSpinner();
+                api().url("/users/current").get().then(function (response) {
+                    self.user = response;
+                    Lockr.set("User",self.user);
+                    api().url("/network_participants").get({ q: "CREATOR_USER_ID:"+self.user.id} ).then(function(response2){
+                        self.participants = response2.network_participants; 
+                    });
+                }).finally(function () {
+                    self.showApp();
+                    hideSpinner();
+                });
+            },
+            methods: {
+                showApp: function () {
+                    $("#header").load("/htmlFragment/header", {}, function () {
+                        fixMenu();
+                        //$("#pageTitle").html("");
+                        $("#root").show();
+                    });
+                },
+                blank:function(event){
+                    event && event.preventDefault();
+                    let self = this; 
+                    window.location.href = "/network_participants/blank"
+                },
+                show:function(event,id){
+                    event && event.preventDefault();
+                    let self = this; 
+                    window.location.href = "/network_participants/show/"+id;
+                }
+
+            }
+        });
+    });
+</script>
+<div id="root" style="display:none;">
+    <div id="header">
+    </div>
+    <div id="app" class="app-body">
+        <div class="container">
+            <div class="d-flex flex-row justify-content-end">
+                <a href="#" class="m-1 btn btn-primary" @click="blank($event)">New</a>
+            </div>
+            <div class="row" v-for="(participant,index) in participants">
+                <div class="col">
+                    <div class="content-box my-2">
+                        <h6 class="m-0">{{participant.name}} </h6>
+                        <a href="#" @click="show($event,participant.id)">{{participant.participant_id}}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -22,17 +22,10 @@ public class RatingConsumer {
     static {
         registerRatingConsumer(new RatingConsumer());
     }
-    /*
-        topic.append("ROOT").
-            append("/").append(context.getCountry()).
-            append("/").append(context.getCity()).
-            append("/").append(rating.getRatingCategory()).
-            append("/").append(rating.getId()).
-            append("/").append(getEventName());
 
-     */
     public static void registerRatingConsumer(RatingConsumer consumer){
-        MessageAdaptorFactory.getInstance().getDefaultMessageAdaptor().subscribe("ROOT/#", new CloudEventHandler() {
+        //Let this happen after all extensions are registered or else the Message adaptors will not be registered
+        TaskManager.instance().executeAsync(()-> MessageAdaptorFactory.getInstance().getDefaultMessageAdaptor().subscribe("ROOT/#", new CloudEventHandler() {
             @Override
             public void handle(String topic, CloudEvent event) {
                 TaskManager.instance().executeAsync(()-> collate(event),false);
@@ -50,7 +43,7 @@ public class RatingConsumer {
                 TransactionRating tr1 = Database.getTable(TransactionRating.class).getRefreshed(tr);
                 tr1.save();
             }
-        });
+        }),false);
     }
 
 }

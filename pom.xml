@@ -73,11 +73,21 @@
             <artifactId>swf</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.venkatramanm.swf-all</groupId>
+            <artifactId>swf-plugin-hivemq</artifactId>
+            <version>${revision}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <version>1.4.192</version>
+    </dependency>
+    <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+          <version>2.14.1</version>
     </dependency>
     <!-- Uncomment dependencies as required
       <dependency>
