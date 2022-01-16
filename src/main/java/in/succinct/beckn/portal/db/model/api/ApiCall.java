@@ -4,19 +4,23 @@ import com.venky.swf.db.annotations.column.COLUMN_DEF;
 import com.venky.swf.db.annotations.column.COLUMN_SIZE;
 import com.venky.swf.db.annotations.column.UNIQUE_KEY;
 import com.venky.swf.db.annotations.column.defaulting.StandardDefault;
+import com.venky.swf.db.annotations.column.indexing.Index;
 import com.venky.swf.db.annotations.column.pm.PARTICIPANT;
 import com.venky.swf.db.model.Model;
 
 public interface ApiCall extends Model {
     @PARTICIPANT
+    @Index
     public Long getCreatorUserId();
 
 
+    @Index
     public Long getApiTestId();
     public void setApiTestId(Long id);
     public ApiTest getApiTest();
 
     @UNIQUE_KEY
+    @Index
     public String getMessageId();
     public void setMessageId(String messageId);
 
