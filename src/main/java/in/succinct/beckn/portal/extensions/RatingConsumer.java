@@ -3,6 +3,7 @@ package in.succinct.beckn.portal.extensions;
 
 import com.venky.core.util.Bucket;
 import com.venky.swf.db.Database;
+import com.venky.swf.plugins.background.core.AsyncTaskManager;
 import com.venky.swf.plugins.background.core.TaskManager;
 import com.venky.swf.plugins.background.messaging.MessageAdaptor.CloudEventHandler;
 import com.venky.swf.plugins.background.messaging.MessageAdaptorFactory;
@@ -16,6 +17,7 @@ import org.json.simple.JSONValue;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class RatingConsumer {
@@ -28,7 +30,7 @@ public class RatingConsumer {
         TaskManager.instance().executeAsync(()-> MessageAdaptorFactory.getInstance().getDefaultMessageAdaptor().subscribe("ROOT/#", new CloudEventHandler() {
             @Override
             public void handle(String topic, CloudEvent event) {
-                TaskManager.instance().executeAsync(()-> collate(event),false);
+                AsyncTaskManager.getInstance().addAll(Arrays.asList(()->collate(event)));
             }
             public void collate(CloudEvent event){
                 JSONObject rateRequest = (JSONObject) JSONValue.parse(new InputStreamReader(new ByteArrayInputStream(Objects.requireNonNull(event.getData()).toBytes())));
