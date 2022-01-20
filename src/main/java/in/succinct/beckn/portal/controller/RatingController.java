@@ -6,7 +6,9 @@ import com.venky.swf.controller.annotations.RequireLogin;
 import com.venky.swf.db.Database;
 import com.venky.swf.db.annotations.column.ui.mimes.MimeType;
 import com.venky.swf.path.Path;
+import com.venky.swf.plugins.background.messaging.MessageAdaptor;
 import com.venky.swf.plugins.background.messaging.MessageAdaptorFactory;
+import com.venky.swf.plugins.beckn.messaging.Topic;
 import com.venky.swf.views.BytesView;
 import com.venky.swf.views.View;
 import in.succinct.beckn.Context;
@@ -60,11 +62,6 @@ public class RatingController extends BppController{
         }
 
         @Override
-        public String getEventName() {
-            return "rating";
-        }
-
-        @Override
         public void publishAsync() {
             Context context = getRequest().getContext();
             Rating rating = getRequest().getMessage().getRating();
@@ -80,7 +77,7 @@ public class RatingController extends BppController{
                 throw new RuntimeException("Cannot identify source of the message");
             }
             final CloudEventBuilder builder = CloudEventBuilder.v1().withId(context.getMessageId()) // this can be
-                    .withType(getEventName()) // type of event
+                    .withType(context.getAction()) // type of event
                     .withSource(URI.create(srcUri)) // event source
                     //.withDataSchema(URI.create("http://beckn.org/schemas/confirm.json")) // "Identifies the schema that data
                     // adheres to."
@@ -102,15 +99,17 @@ public class RatingController extends BppController{
 
             final CloudEvent event = builder.build();
 
-            StringBuilder topic = new StringBuilder();
-            topic.append("ROOT").
-                    append("/").append(context.getCountry()).
-                    append("/").append(context.getCity()).
-                    append("/").append(rating.getRatingCategory()).
-                    append("/").append(rating.getId()).
-                    append("/").append(getEventName());
+            MessageAdaptor adaptor = MessageAdaptorFactory.getInstance().getDefaultMessageAdaptor();
+            Topic topic = Topic.builder(adaptor).
+                    country(context.getCountry()).
+                    city(context.getCity()).
+                    domain(context.getDomain()).
+                    action(context.getAction()).
+                    subscriber_id("all").
+                    transaction_id(context.getTransactionId()).
+                    message_id(context.getMessageId()).build();
 
-            MessageAdaptorFactory.getInstance().getDefaultMessageAdaptor().publish(topic.toString(),event);
+            adaptor.getDefaultQueue().publish(topic.toString(),event);
         }
     }
 

@@ -78,7 +78,16 @@
             <artifactId>swf-plugin-hivemq</artifactId>
             <version>${revision}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.github.venkatramanm.swf-all</groupId>
+            <artifactId>swf-plugin-nats</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.venkatramanm.swf-all</groupId>
+            <artifactId>swf-plugin-beckn</artifactId>
+            <version>${revision}</version>
+        </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>

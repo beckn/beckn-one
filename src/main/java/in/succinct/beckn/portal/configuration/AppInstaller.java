@@ -1,12 +1,19 @@
 package in.succinct.beckn.portal.configuration;
 
+import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient.Mqtt3SubscribeAndCallbackBuilder.Call.Ex;
 import com.venky.core.security.Crypt;
 import com.venky.core.util.ObjectUtil;
 import com.venky.swf.configuration.Installer;
 import com.venky.swf.db.Database;
+import com.venky.swf.db.model.reflection.ModelReflector;
 import com.venky.swf.plugins.collab.db.model.CryptoKey;
 import com.venky.swf.routing.Config;
+import com.venky.swf.sql.Expression;
+import com.venky.swf.sql.Operator;
+import com.venky.swf.sql.Select;
+import com.venky.swf.sql.parser.SQLExpressionParser.EQ;
 import in.succinct.beckn.Request;
+import in.succinct.beckn.portal.db.model.api.UseCase;
 import in.succinct.beckn.portal.util.DomainMapper;
 import in.succinct.beckn.registry.db.model.onboarding.NetworkDomain;
 import in.succinct.beckn.registry.db.model.onboarding.NetworkParticipant;
@@ -15,17 +22,27 @@ import in.succinct.beckn.registry.db.model.onboarding.ParticipantKey;
 
 import java.security.KeyPair;
 import java.sql.Timestamp;
+import java.util.List;
 
 public class AppInstaller implements Installer {
 
     @Override
     public void install() {
+        updateUseCases();
         for (String type : new String[]{NetworkRole.SUBSCRIBER_TYPE_BAP,NetworkRole.SUBSCRIBER_TYPE_BG,NetworkRole.SUBSCRIBER_TYPE_BPP}) {
             for (String domain : DomainMapper.domains()) {
                 generateBecknKeys(domain, type);
             }
         }
         //updateProviderLocationsMinMaxLatLng();
+    }
+
+    private void updateUseCases() {
+        List<UseCase> useCases = new Select().from(UseCase.class).where(new Expression(ModelReflector.instance(UseCase.class).getPool(),"NETWORK_DOMAIN_ID", Operator.EQ)).execute();
+        for (UseCase useCase : useCases) {
+            useCase.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+            useCase.save();
+        }
     }
 
     public void generatePrivateKeys(){

@@ -5,7 +5,6 @@ import com.venky.swf.controller.Controller;
 import com.venky.swf.controller.annotations.RequireLogin;
 import com.venky.swf.db.annotations.column.ui.mimes.MimeType;
 import com.venky.swf.path.Path;
-import com.venky.swf.plugins.background.core.TaskManager;
 import com.venky.swf.routing.Config;
 import com.venky.swf.views.BytesView;
 import com.venky.swf.views.View;
@@ -16,7 +15,6 @@ import in.succinct.beckn.Options;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.Response;
 import in.succinct.beckn.portal.util.BecknActionCallBack;
-import in.succinct.beckn.portal.util.BecknMessagePublisher;
 import org.json.simple.JSONArray;
 
 import javax.servlet.http.HttpServletResponse;
@@ -44,7 +42,7 @@ public class BppController extends Controller {
     public View ack(Request request){
         Acknowledgement ack = new Acknowledgement(Status.ACK);
         //ack.setSignature(Request.generateSignature(request.hash(),request.getPrivateKey(request.getContext().getBppId(),request.getContext().getBppId() +".k1")));
-        return new BytesView(getPath(),new Response(request.getContext(),ack).toString().getBytes(StandardCharsets.UTF_8));
+        return new BytesView(getPath(),new Response(request.getContext(),ack).toString().getBytes(StandardCharsets.UTF_8),MimeType.APPLICATION_JSON);
     }
 
     protected View act(){
@@ -74,7 +72,7 @@ public class BppController extends Controller {
             response.setError(error);
             error.setCode(ex.getMessage());
             error.setMessage(ex.getMessage());
-            return new BytesView(getPath(),response.toString().getBytes(StandardCharsets.UTF_8));
+            return new BytesView(getPath(),response.toString().getBytes(StandardCharsets.UTF_8),MimeType.APPLICATION_JSON);
         }
     }
     @RequireLogin(false)

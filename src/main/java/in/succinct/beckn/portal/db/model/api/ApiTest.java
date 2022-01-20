@@ -51,6 +51,10 @@ public interface ApiTest extends Model {
     public Boolean isSignatureNeeded();
     public void setSignatureNeeded(Boolean signatureNeeded);
 
+    @COLUMN_DEF(StandardDefault.BOOLEAN_FALSE)
+    public Boolean isPushedViaMessageQ();
+    public void setPushedViaMessageQ(Boolean pushedViaMessageQ);
+
 
     public ApiCall execute();
 

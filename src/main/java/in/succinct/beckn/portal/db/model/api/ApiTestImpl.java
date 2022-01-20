@@ -1,6 +1,8 @@
 package in.succinct.beckn.portal.db.model.api;
 
+import com.venky.core.collections.IgnoreCaseMap;
 import com.venky.core.string.StringUtil;
+import com.venky.core.util.ObjectHolder;
 import com.venky.core.util.ObjectUtil;
 import com.venky.swf.db.Database;
 import com.venky.swf.db.annotations.column.ui.mimes.MimeType;
@@ -9,7 +11,10 @@ import com.venky.swf.db.table.ModelImpl;
 import com.venky.swf.integration.api.Call;
 import com.venky.swf.integration.api.HttpMethod;
 import com.venky.swf.integration.api.InputFormat;
-import com.venky.swf.plugins.templates.util.templates.TemplateEngine;
+import com.venky.swf.plugins.background.messaging.MessageAdaptor;
+import com.venky.swf.plugins.background.messaging.MessageAdaptor.CloudEventHandler;
+import com.venky.swf.plugins.background.messaging.MessageAdaptor.SubscriptionHandle;
+import com.venky.swf.plugins.background.messaging.MessageAdaptorFactory;
 import com.venky.swf.routing.Config;
 import com.venky.swf.sql.Conjunction;
 import com.venky.swf.sql.Expression;
@@ -25,19 +30,26 @@ import in.succinct.beckn.Context;
 import in.succinct.beckn.Message;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.portal.util.DomainMapper;
-import in.succinct.beckn.registry.db.model.Subscriber;
 import in.succinct.beckn.registry.db.model.onboarding.NetworkDomain;
 import in.succinct.beckn.registry.db.model.onboarding.NetworkParticipant;
 import in.succinct.beckn.registry.db.model.onboarding.NetworkRole;
+import io.cloudevents.CloudEvent;
+import io.cloudevents.core.builder.CloudEventBuilder;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @SuppressWarnings("unchecked")
@@ -63,13 +75,13 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         NetworkRole calledOn = test.getCalledOnSubscriber();
         NetworkRole caller = test.getProxySubscriber();
         if (caller == null){
-            caller = getSelfSubscription(test.getUseCase().getDomain(),ObjectUtil.equals(calledOn.getType(), NetworkRole.SUBSCRIBER_TYPE_BAP)?
+            caller = getSelfSubscription(test.getUseCase().getNetworkDomain().getName(),ObjectUtil.equals(calledOn.getType(), NetworkRole.SUBSCRIBER_TYPE_BAP)?
                     NetworkRole.SUBSCRIBER_TYPE_BPP : NetworkRole.SUBSCRIBER_TYPE_BAP);
         }
 
 
 
-        JSONObject headers  = new JSONObject();
+        Map<String,String> headers  = new HashMap<>();
         assert caller != null;
         if (Config.instance().getBooleanProperty("beckn.auth.enabled", false) && test.isSignatureNeeded() ) {
             headers.put("Authorization", request.generateAuthorizationHeader(caller.getSubscriberId(),
@@ -78,31 +90,86 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         headers.put("Accept", MimeType.APPLICATION_JSON.toString());
         headers.put("Content-Type",MimeType.APPLICATION_JSON.toString());
 
-        JSONObject responseHeaders = new JSONObject();
-
-        Call<JSONObject> call = new Call<>();
-        call.method(HttpMethod.POST).
-                url(calledOn.getUrl() +"/" + api.getName()).
-                input(request.getInner()).inputFormat(InputFormat.JSON).headers(headers);
-        JSONAware response = call.getResponseAsJson();
-        if (response == null ){
-            response = (JSONAware) JSONValue.parse(new InputStreamReader(call.getErrorStream()));
-        }
-
-        JSONFormatter formatter = new JSONFormatter();
         ApiCall apiCall = Database.getTable(ApiCall.class).newRecord();
         apiCall.setApiTestId(test.getId());
         apiCall.setRequestHeaders(headers.toString());
         apiCall.setRequestPayLoad(request.getInner().toString());
-        if (response != null){
+
+        if (!test.isPushedViaMessageQ()){
+            JSONObject responseHeaders = new JSONObject();
+            Call<JSONObject> call = new Call<>();
+            call.method(HttpMethod.POST).
+                    url(calledOn.getUrl() +"/" + api.getName()).
+                    input(request.getInner()).inputFormat(InputFormat.JSON).headers(headers);
+            JSONAware response = call.getResponseAsJson();
+            if (response == null ){
+                response = (JSONAware) JSONValue.parse(new InputStreamReader(call.getErrorStream()));
+            }
             responseHeaders.putAll(call.getResponseHeaders());
-            apiCall.setResponseHeaders(responseHeaders.toString());
-            apiCall.setResponsePayload(formatter.toString(response));
+            JSONFormatter formatter = new JSONFormatter();
+            if (response != null){
+                apiCall.setResponseHeaders(responseHeaders.toString());
+                apiCall.setResponsePayload(formatter.toString(response));
+            }
+        }else {
+            pushToQueue(request,headers);
         }
         apiCall.setMessageId(context.getMessageId());
         apiCall.save();
 
         return apiCall;
+    }
+
+    private void pushToQueue(Request request, Map<String,String> headers) {
+        ApiTest test = getProxy();
+        NetworkRole calledOnSubscriber = test.getCalledOnSubscriber();
+
+        Map<String,String> authParams = request.extractAuthorizationParams("Authorization",headers);
+        Context context = request.getContext();
+
+        String src = authParams.get("subscriber_id");
+        String srcUri = null;
+        if (ObjectUtil.equals(src,context.getBapId())){
+            srcUri = context.getBapUri();
+        }else if (ObjectUtil.equals(src,context.getBppId())){
+            srcUri = context.getBppUri();
+        }else {
+            throw new RuntimeException("Cannot identify source of the message");
+        }
+
+
+
+        final CloudEventBuilder builder = CloudEventBuilder.v1().withId(context.getMessageId()) // this can be
+                .withType(context.getAction()) // type of event
+                .withSource(URI.create(srcUri)) // event source
+                .withDataContentType("application/json")
+                .withData(request.toString().getBytes(StandardCharsets.UTF_8));
+
+        headers.forEach((k,v)-> {
+            String key = ((String)k).toLowerCase();
+            if (key.matches("[a-z,0-9]*")) {
+                builder.withExtension(key, (String)v);
+            }
+        });
+
+
+        final CloudEvent event = builder.build();
+
+        MessageAdaptor adaptor = MessageAdaptorFactory.getInstance().getDefaultMessageAdaptor();
+        StringBuilder topic = new StringBuilder();
+        topic.append("ROOT").                                                                                                       // ROOT
+                append(adaptor.getSeparatorToken()).append(context.getCountry()).                                                   // Country
+                append(adaptor.getSeparatorToken()).append(context.getCity()).   // City
+                append(adaptor.getSeparatorToken()).append(context.getDomain()).                                    // Domain
+                append(adaptor.getSeparatorToken()).append(context.getAction()).                           // Action
+                append(adaptor.getSeparatorToken()).append("search".equals(context.getAction()) ? "all" :   // Subscriber
+                                                            (context.getAction().startsWith("on_") ? context.getBapId() : context.getBppId()).
+                                                                    replaceAll(adaptor.getSeparatorToken(), "_separator_")).
+                append(adaptor.getSeparatorToken()).append(context.getTransactionId()).   // Transaction
+                append(adaptor.getSeparatorToken()).append(context.getMessageId());   // Message
+
+
+        adaptor.getDefaultQueue().publish(topic.toString(),event);
     }
 
     private Message getMessage() {
@@ -149,7 +216,7 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
 
         Context context = new Context();
         context.setAction(api.getName());
-        context.setDomain(useCase.getDomain());
+        context.setDomain(useCase.getNetworkDomain().getName());
         context.setTtl(60);
 
         NetworkRole bap = null;
@@ -194,10 +261,10 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
             }
         }else {
             if (bap == null){
-                bap = getSelfSubscription(useCase.getDomain(),NetworkRole.SUBSCRIBER_TYPE_BAP);
+                bap = getSelfSubscription(useCase.getNetworkDomain().getName(),NetworkRole.SUBSCRIBER_TYPE_BAP);
             }
             if (bpp == null){
-                bpp = getSelfSubscription(useCase.getDomain(),NetworkRole.SUBSCRIBER_TYPE_BPP);
+                bpp = getSelfSubscription(useCase.getNetworkDomain().getName(),NetworkRole.SUBSCRIBER_TYPE_BPP);
             }
         }
 

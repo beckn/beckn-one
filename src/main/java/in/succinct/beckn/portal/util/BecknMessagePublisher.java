@@ -23,7 +23,6 @@ public abstract class BecknMessagePublisher {
 
 
 
-    public abstract String getEventName();
     public abstract void publishAsync();
 }
 
