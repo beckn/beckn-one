@@ -60,20 +60,22 @@ public class BapController extends Controller {
         Request request =null ;
         try {
             request = new Request(StringUtil.read(getPath().getInputStream()));
-            if (!Config.instance().getBooleanProperty("beckn.auth.enabled", false)  || request.verifySignature("Authorization",getPath().getHeaders())){
-                String messageId = request.getContext().getMessageId();
-                if (ObjectUtil.isVoid(messageId)){
-                    messageId = UUID.randomUUID().toString();
-                }
-                JSONFormatter formatter = new JSONFormatter();
-                List<ApiCall> apiCalls = new Select(true,true).from(ApiCall.class).where(new Expression(ModelReflector.instance(ApiCall.class).getPool(),"MESSAGE_ID", Operator.EQ,messageId)).execute();
-                ApiCall apiCall =null;
-                if (apiCalls.isEmpty()){
-                    apiCall = Database.getTable(ApiCall.class).newRecord();
-                    apiCall.setMessageId(messageId);
-                }else {
-                    apiCall  = apiCalls.get(0);
-                }
+            String messageId = request.getContext().getMessageId();
+            if (ObjectUtil.isVoid(messageId)){
+                messageId = UUID.randomUUID().toString();
+            }
+            JSONFormatter formatter = new JSONFormatter();
+            List<ApiCall> apiCalls = new Select(true,true).from(ApiCall.class).where(new Expression(ModelReflector.instance(ApiCall.class).getPool(),"MESSAGE_ID", Operator.EQ,messageId)).execute();
+            ApiCall apiCall =null;
+            if (apiCalls.isEmpty()){
+                apiCall = Database.getTable(ApiCall.class).newRecord();
+                apiCall.setMessageId(messageId);
+            }else {
+                apiCall  = apiCalls.get(0);
+            }
+
+            if (!Config.instance().getBooleanProperty("beckn.auth.enabled", false)  ||
+                    request.verifySignature("Authorization",getPath().getHeaders(),apiCall.getApiTest().isSignatureNeeded())){
 
                 JSONObject responseCollection = new JSONObject();
                 JSONObject headersCollection = new JSONObject();

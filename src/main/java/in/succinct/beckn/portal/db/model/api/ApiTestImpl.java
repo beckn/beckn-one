@@ -15,6 +15,7 @@ import com.venky.swf.plugins.background.messaging.MessageAdaptor;
 import com.venky.swf.plugins.background.messaging.MessageAdaptor.CloudEventHandler;
 import com.venky.swf.plugins.background.messaging.MessageAdaptor.SubscriptionHandle;
 import com.venky.swf.plugins.background.messaging.MessageAdaptorFactory;
+import com.venky.swf.plugins.beckn.messaging.Topic;
 import com.venky.swf.routing.Config;
 import com.venky.swf.sql.Conjunction;
 import com.venky.swf.sql.Expression;
@@ -142,8 +143,8 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         final CloudEventBuilder builder = CloudEventBuilder.v1().withId(context.getMessageId()) // this can be
                 .withType(context.getAction()) // type of event
                 .withSource(URI.create(srcUri)) // event source
-                .withDataContentType("application/json")
-                .withData(request.toString().getBytes(StandardCharsets.UTF_8));
+                .withDataContentType("application/octet-stream")
+                .withData(request.toString().getBytes());
 
         headers.forEach((k,v)-> {
             String key = ((String)k).toLowerCase();
@@ -156,17 +157,11 @@ public class ApiTestImpl extends ModelImpl<ApiTest> {
         final CloudEvent event = builder.build();
 
         MessageAdaptor adaptor = MessageAdaptorFactory.getInstance().getDefaultMessageAdaptor();
-        StringBuilder topic = new StringBuilder();
-        topic.append("ROOT").                                                                                                       // ROOT
-                append(adaptor.getSeparatorToken()).append(context.getCountry()).                                                   // Country
-                append(adaptor.getSeparatorToken()).append(context.getCity()).   // City
-                append(adaptor.getSeparatorToken()).append(context.getDomain()).                                    // Domain
-                append(adaptor.getSeparatorToken()).append(context.getAction()).                           // Action
-                append(adaptor.getSeparatorToken()).append("search".equals(context.getAction()) ? "all" :   // Subscriber
-                                                            (context.getAction().startsWith("on_") ? context.getBapId() : context.getBppId()).
-                                                                    replaceAll(adaptor.getSeparatorToken(), "_separator_")).
-                append(adaptor.getSeparatorToken()).append(context.getTransactionId()).   // Transaction
-                append(adaptor.getSeparatorToken()).append(context.getMessageId());   // Message
+        Topic topic = Topic.builder(adaptor).domain(context.getDomain()).country(context.getCountry()).
+                city(context.getCity()).action(context.getAction()).
+                subscriber_id(context.getAction().startsWith("on_") ? context.getBapId() : context.getBppId()).
+                transaction_id(context.getTransactionId()).
+                message_id(context.getMessageId()).build();
 
 
         adaptor.getDefaultQueue().publish(topic.toString(),event);

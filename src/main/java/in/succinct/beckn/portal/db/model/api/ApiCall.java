@@ -52,9 +52,6 @@ public interface ApiCall extends Model {
     public String getCallBackHeaders();
     public void setCallBackHeaders(String headers);
 
-    @COLUMN_DEF(StandardDefault.BOOLEAN_FALSE)
-    public Boolean isSignatureNeeded();
-    public void setSignatureNeeded(Boolean signatureNeeded);
 
     public void execute();
 }

@@ -81,7 +81,7 @@ public class RatingController extends BppController{
                     .withSource(URI.create(srcUri)) // event source
                     //.withDataSchema(URI.create("http://beckn.org/schemas/confirm.json")) // "Identifies the schema that data
                     // adheres to."
-                    .withDataContentType("application/json")
+                    .withDataContentType("application/octet-stream")
                     .withData(getRequest().toString().getBytes(StandardCharsets.UTF_8));
 
             getRequestHeaders().forEach((k,v)-> {

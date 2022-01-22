@@ -74,7 +74,7 @@ public class BgController extends Controller {
             request = new Request(StringUtil.read(getPath().getInputStream()));
             List<Task> tasks = new ArrayList<>();
             if (!Config.instance().getBooleanProperty("beckn.auth.enabled", false)  ||
-                    request.verifySignature("Authorization",getPath().getHeaders())){
+                    request.verifySignature("Authorization",getPath().getHeaders() , false)){
                 Context context = request.getContext();
                 if ("search".equals(request.getContext().getAction())){
                     Subscriber criteria = getCriteria(request);

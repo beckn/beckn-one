@@ -54,7 +54,7 @@ public class BppController extends Controller {
         Request request = null;
         try {
             request = new Request(StringUtil.read(getPath().getInputStream()));
-            if (!Config.instance().getBooleanProperty("beckn.auth.enabled", false)  || request.verifySignature("Authorization",getPath().getHeaders())){
+            if (!Config.instance().getBooleanProperty("beckn.auth.enabled", false)  || request.verifySignature("Authorization",getPath().getHeaders(),false)){
                 if (callback != null){
                     return callback.execute(request,getPath().getHeaders());
                 }
