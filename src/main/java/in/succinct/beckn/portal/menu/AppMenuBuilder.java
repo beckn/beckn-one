@@ -20,8 +20,8 @@ public class AppMenuBuilder extends DefaultMenuBuilder{
     public Menu createAppMenu(_IPath path) {
         Menu appMenu = super.createAppMenu(path);
         SubMenu subMenu = appMenu.getSubmenu("Help");
-        subMenu.addMenuItem("Getting Started", "/markdown/getting_started?includeMenu=Y");
-        subMenu.addMenuItem("Api Documentation", "/markdown/api_documents?includeMenu=Y");
+        subMenu.addMenuItem("Getting Started", "/markdown/getting_started");
+        subMenu.addMenuItem("Api Documentation", "/markdown/api_documents");
         return appMenu;
     }
 }
