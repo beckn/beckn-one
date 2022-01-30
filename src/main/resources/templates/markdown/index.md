@@ -20,6 +20,6 @@ Beckn application programmers can use this portal to validate their beckn implem
 4. [The original Beckn White Paper](https://becknprotocol.io/imagining-with-beckn/)
 
 To Register yourself as a beckn application developer with your google id click <a href="/oid/login?SELECTED_OPEN_ID=GOOGLE" target="_blank">here
-    <img src="../images/google-icon.svg"/>
+    <img src="/images/google-icon.svg"/>
 </a>.
 
