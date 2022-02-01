@@ -22,6 +22,7 @@ import in.succinct.beckn.Error;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.Response;
 import in.succinct.beckn.portal.db.model.api.ApiCall;
+import in.succinct.beckn.portal.db.model.api.ApiTest;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
@@ -73,9 +74,10 @@ public class BapController extends Controller {
             }else {
                 apiCall  = apiCalls.get(0);
             }
+            ApiTest apiTest = apiCall.getApiTest();
 
             if (!Config.instance().getBooleanProperty("beckn.auth.enabled", false)  ||
-                    request.verifySignature("Authorization",getPath().getHeaders(),apiCall.getApiTest().isSignatureNeeded())){
+                    request.verifySignature("Authorization",getPath().getHeaders(), apiTest == null || apiTest.isSignatureNeeded())){
 
                 JSONObject responseCollection = new JSONObject();
                 JSONObject headersCollection = new JSONObject();

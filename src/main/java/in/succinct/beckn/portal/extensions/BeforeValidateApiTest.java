@@ -14,7 +14,7 @@ public class BeforeValidateApiTest extends BeforeModelValidateExtension<ApiTest>
             throw new RuntimeException("Specify the subscriber to be called");
         }
 
-        if (!ObjectUtil.equals(model.getUseCase().getBecknApi().getPlatform(),model.getCalledOnSubscriber().getType())){
+        if (model.getUseCase()!= null && !ObjectUtil.equals(model.getUseCase().getBecknApi().getPlatform(),model.getCalledOnSubscriber().getType())){
             throw new RuntimeException("Api must be called on a " + model.getUseCase().getBecknApi().getPlatform());
         }
     }

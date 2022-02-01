@@ -1,6 +1,7 @@
 package in.succinct.beckn.portal.db.model.api;
 
 import com.venky.swf.db.annotations.column.COLUMN_DEF;
+import com.venky.swf.db.annotations.column.IS_NULLABLE;
 import com.venky.swf.db.annotations.column.UNIQUE_KEY;
 import com.venky.swf.db.annotations.column.defaulting.StandardDefault;
 import com.venky.swf.db.annotations.column.indexing.Index;
@@ -20,6 +21,7 @@ public interface ApiTest extends Model {
     
     @UNIQUE_KEY
     @Index
+    @IS_NULLABLE(false)
     public Long getUseCaseId();
     public void setUseCaseId(Long id);
     public UseCase getUseCase();
