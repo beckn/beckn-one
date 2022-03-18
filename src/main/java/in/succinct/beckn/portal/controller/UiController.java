@@ -25,7 +25,7 @@ public class UiController extends Controller {
     @RequireLogin(false)
     public View dist(String path){
         if (path == null || path.lastIndexOf('.') < 0) {
-            return new TemplateView(getPath(), getTemplateDirectory() + "/dist", "index.html");
+            return new TemplateView(getPath(), getTemplateDirectory() + "/dist", "index.html",true);
         }else {
             return load("/dist/"+path, MimetypesFileTypeMap.getDefaultFileTypeMap().getContentType(path));
         }

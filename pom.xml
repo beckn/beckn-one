@@ -8,7 +8,7 @@
   <description>portal</description>
     <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <revision>2.6-SNAPSHOT</revision>
+      <revision>2.9</revision>
     </properties>
     <build>
         <plugins>
@@ -90,36 +90,13 @@
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>1.4.192</version>
-    </dependency>
-    <dependency>
-          <groupId>org.apache.logging.log4j</groupId>
-          <artifactId>log4j-core</artifactId>
-          <version>2.14.1</version>
-    </dependency>
-    <!-- Uncomment dependencies as required
-      <dependency>
-          <groupId>org.apache.derby</groupId>
-          <artifactId>derby</artifactId>
-          <version>10.12.1.1</version>
-      </dependency>
-    <dependency>
-      <groupId>org.xerial</groupId>
-      <artifactId>sqlite-jdbc</artifactId>
-      <version>3.7.15-SNAPSHOT</version>
-    </dependency>
-      <dependency>
-          <groupId>mysql</groupId>
-          <artifactId>mysql-connector-java</artifactId>
-          <version>5.1.22</version>
-      </dependency>
-      <dependency>
-          <groupId>postgresql</groupId>
-          <artifactId>postgresql</artifactId>
-      <version>9.1-901-1.jdbc4</version>
-      </dependency>
-    -->
-
+            <artifactId>h2</artifactId>
+            <version>2.1.210</version>
+        </dependency>
+        <dependency>
+              <groupId>org.apache.logging.log4j</groupId>
+              <artifactId>log4j-core</artifactId>
+              <version>2.14.1</version>
+        </dependency>
     </dependencies>
 </project>
